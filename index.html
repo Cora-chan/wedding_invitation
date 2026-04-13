@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>黄小鱼 & 康越 婚礼邀请函</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP 3 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./index.css" />
+  <script defer src="./index.js"></script>
+
+
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════ -->
+<div id="loading">
+  <div class="logo-monogram" id="logo-mono">HY</div>
+  <div class="logo-divider" id="logo-div"></div>
+  <div class="logo-names" id="logo-names">黄小鱼 &amp; 康越</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar" id="loading-bar"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     MUSIC
+═══════════════════════════════ -->
+<audio id="bgm" loop preload="auto">
+  <!-- 替换为真实音乐URL -->
+  <source src="https://placeholder-music-url.com/wedding-bgm.mp3" type="audio/mpeg" />
+</audio>
+<div id="music-btn" onclick="toggleMusic()">
+  <span class="note">♪</span>
+</div>
+
+<!-- ═══════════════════════════════
+     ENVELOPE SECTION
+═══════════════════════════════ -->
+<section id="envelope-section">
+  <!-- Floating petals (rendered via JS) -->
+  <div id="petals-container"></div>
+
+  <p class="section-title-top fade-up">Wedding Invitation</p>
+
+  <div id="envelope-wrapper">
+    <div id="envelope">
+      <!-- Flap (rotates open) -->
+      <div class="env-flap" id="env-flap"></div>
+
+      <!-- Body -->
+      <div class="env-body">
+        <div class="env-body-content">
+          <div class="env-wax-seal">HY</div>
+          <p class="env-to-label">致</p>
+          <p class="env-to-name" id="guest-name">尊贵的宾客</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="env-hint">轻触开启</p>
+
+  <div class="scroll-indicator" id="scroll-hint" style="display:none">
+    <div class="arrow"></div>
+    <span>向下滑动</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════
+     MAIN CONTENT (hidden until envelope opens)
+═══════════════════════════════ -->
+<div id="content">
+
+  <!-- ── Cover ── -->
+  <section id="cover">
+    <div class="cover-bg"></div>
+
+    <div class="cover-ornament fade-up">✦</div>
+    <h1 class="cover-zh fade-up">黄小鱼</h1>
+    <p class="cover-ampersand fade-up">&amp;</p>
+    <h1 class="cover-zh fade-up">康越</h1>
+
+    <div class="cover-divider fade-up"></div>
+
+    <p class="cover-date fade-up">2026 · 05 · 01</p>
+    <p class="cover-date fade-up" style="margin-top:6px;font-size:clamp(12px,3.5vw,14px)">恭请您的莅临</p>
+
+    <div class="ornament-line fade-up" style="margin-top:32px">
+      <span>✦</span>
+    </div>
+
+    <p class="cover-invitation fade-up">We're Getting Married</p>
+  </section>
+
+  <!-- ── Story ── -->
+  <section id="story">
+    <p class="section-label fade-up">Our Story</p>
+    <h2 class="section-heading fade-up">我们的故事</h2>
+    <div class="ornament-line ornament-line-dark fade-up"><span>♡</span></div>
+
+    <div class="story-card fade-up">
+      <div class="story-img">
+        <!-- 替换为真实照片 -->
+        <img src="https://placeholder.pics/svg/400x267/C9A96E/FFFFFF/photo-1" alt="相识" style="width:100%;display:block" onerror="this.style.display='none'" />
+        <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#E8D5A3,#C9A96E)">
+          <span class="gallery-placeholder">相识 · 照片占位</span>
+        </div>
+      </div>
+      <div class="story-body">
+        <p class="story-year">2020 · Spring</p>
+        <h3 class="story-title">初见，是命中注定的缘分</h3>
+        <p class="story-text">那一年春天，我们在同一座城市的某个角落相遇。从此，日子里多了一个人的笑声，夜晚也不再孤单。</p>
+      </div>
+    </div>
+
+    <div class="story-card fade-up">
+      <div class="story-body">
+        <p class="story-year">2022 · Summer</p>
+        <h3 class="story-title">共同走过的每一步</h3>
+        <p class="story-text">我们一起旅行，一起成长，一起在平淡的生活里寻找闪光的瞬间。感谢你，让我的世界变得完整。</p>
+      </div>
+    </div>
+
+    <div class="story-card fade-up">
+      <div class="story-img" style="position:relative">
+        <div style="width:100%;aspect-ratio:3/2;background:linear-gradient(135deg,#D4B896,#A8824A);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder">求婚 · 照片占位</span>
+        </div>
+      </div>
+      <div class="story-body">
+        <p class="story-year">2025 · Autumn</p>
+        <h3 class="story-title">「愿意嫁给我吗？」</h3>
+        <p class="story-text">那一刻，时间仿佛静止了。你的眼里有泪光，也有我最想看到的答案。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Details ── -->
+  <section id="details">
+    <p class="section-label fade-up">Wedding Details</p>
+    <h2 class="section-heading fade-up">婚礼详情</h2>
+    <div class="ornament-line fade-up"><span>✦</span></div>
+
+    <div class="detail-card fade-up">
+      <div class="detail-icon">📅</div>
+      <div class="detail-content">
+        <p class="detail-label">Date &amp; Time</p>
+        <p class="detail-value">2026年5月1日（星期五）</p>
+        <p class="detail-sub">中午 12:00 — 婚礼仪式开始</p>
+      </div>
+    </div>
+
+    <div class="detail-card fade-up">
+      <div class="detail-icon">🏨</div>
+      <div class="detail-content">
+        <p class="detail-label">Venue</p>
+        <p class="detail-value">北京香格里拉饭店</p>
+        <p class="detail-sub">宴会厅 · 二层金色大厅</p>
+      </div>
+    </div>
+
+    <div class="detail-card fade-up">
+      <div class="detail-icon">📍</div>
+      <div class="detail-content">
+        <p class="detail-label">Address</p>
+        <p class="detail-value">北京市海淀区</p>
+        <p class="detail-sub">中关村南大街33号</p>
+      </div>
+    </div>
+
+    <div class="detail-card fade-up">
+      <div class="detail-icon">🎁</div>
+      <div class="detail-content">
+        <p class="detail-label">RSVP</p>
+        <p class="detail-value">请于4月20日前确认出席</p>
+        <p class="detail-sub">联系新郎: 138-XXXX-XXXX</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Gallery ── -->
+  <section id="gallery">
+    <p class="section-label fade-up">Gallery</p>
+    <h2 class="section-heading fade-up">我们的时光</h2>
+    <div class="ornament-line ornament-line-dark fade-up"><span>♡</span></div>
+
+    <div class="gallery-grid fade-up">
+      <div class="gallery-item wide">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#E8D5A3,#C9A96E);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder">合影大图 · 占位</span>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#D4B896,#B89860);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder" style="font-size:10px">旅行 · 占位</span>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#C9A96E,#9E7A3F);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder" style="font-size:10px">日常 · 占位</span>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#E0C898,#C9A96E);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder" style="font-size:10px">纪念日 · 占位</span>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#B89860,#8B6914);display:flex;align-items:center;justify-content:center">
+          <span class="gallery-placeholder" style="font-size:10px">婚纱 · 占位</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Map ── -->
+  <section id="map-section">
+    <p class="section-label fade-up">Location</p>
+    <h2 class="section-heading fade-up">婚礼地点</h2>
+    <div class="ornament-line ornament-line-dark fade-up"><span>📍</span></div>
+
+    <div class="map-preview fade-up" id="map-preview">
+      <!-- 替换为真实静态地图截图 -->
+      <div class="map-preview-placeholder">
+        <div class="map-pin">📍</div>
+        <div class="map-label">北京香格里拉饭店</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px">点击按钮查看导航</div>
+      </div>
+      <div class="map-overlay"></div>
+      <div class="map-overlay-text">
+        <div class="map-hotel-name">北京香格里拉饭店</div>
+        <div class="map-hotel-addr">海淀区中关村南大街33号</div>
+      </div>
+    </div>
+
+    <button class="btn-map fade-up" onclick="openMap()">
+      点击导航到婚礼现场
+    </button>
+
+    <p style="text-align:center;font-size:11px;color:#aaa;letter-spacing:0.2em;margin-top:12px" class="fade-up">
+      支持高德地图 · 腾讯地图
+    </p>
+  </section>
+
+  <!-- ── Blessing ── -->
+  <section id="blessing">
+    <p class="section-label fade-up">With Love</p>
+    <h2 class="section-heading fade-up">衷心感谢</h2>
+    <div class="ornament-line fade-up"><span>♡</span></div>
+
+    <p class="blessing-quote fade-up">
+      "感谢您在百忙之中<br />拨冗出席我们的婚礼<br />您的到来，是我们最大的礼物"
+    </p>
+
+    <div class="ornament-line fade-up"><span>✦</span></div>
+
+    <p class="couple-names-footer fade-up">黄小鱼 &amp; 康越</p>
+    <p class="footer-date fade-up">2026.05.01</p>
+
+    <div style="margin-top:40px;padding-bottom:env(safe-area-inset-bottom,16px)"></div>
+  </section>
+
+</div><!-- /#content -->
+
+
+</body>
+</html>
