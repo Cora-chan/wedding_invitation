@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+                 user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>黄啸宇 & 康越 · 我们的故事</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;700&display=swap" rel="stylesheet" />
+
+  <!-- Swiper 11 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ─── Variables (shared with video-intro) ─── */
+    :root {
+      --felt-cream:  #F5EFE4;
+      --felt-warm:   #EDE0CB;
+      --felt-blush:  #E8C4B0;
+      --felt-rust:   #C4855A;
+      --felt-brown:  #7A4E2D;
+      --felt-dark:   #2D1B0E;
+      --felt-green:  #8BAF7C;
+      --felt-grey:   #5C5047;
+      --safe-top:    env(safe-area-inset-top,    0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* ─── Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; min-height: 100%;
+      background: var(--felt-cream);
+      font-family: 'Noto Sans SC', 'STSong', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      /* allow normal scroll on this page */
+      overflow-x: hidden;
+    }
+
+    /* ─── Page wrapper ─── */
+    #carousel-page {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top:    calc(var(--safe-top)    + 0px);
+      padding-bottom: calc(var(--safe-bottom) + 32px);
+      position: relative;
+
+      /* ── Light felt fabric texture ──
+         Same layer structure as invitation/map pages, tuned for cream base.
+         1. Horizontal thread lines  (very faint warm white)
+         2. Vertical thread lines    (very faint warm white)
+         3. Diagonal weave accent    (soft blush-rust, lighter than dark pages)
+         4. Cream base with subtle warm-to-blush radial wash
+      */
+      background-color: var(--felt-cream);
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          rgba(122, 78, 45, 0.030) 0px,
+          rgba(122, 78, 45, 0.030) 1px,
+          transparent 1px,
+          transparent 5px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(122, 78, 45, 0.030) 0px,
+          rgba(122, 78, 45, 0.030) 1px,
+          transparent 1px,
+          transparent 5px
+        ),
+        repeating-linear-gradient(
+          45deg,
+          rgba(196, 133, 90, 0.040) 0px,
+          rgba(196, 133, 90, 0.040) 1px,
+          transparent 1px,
+          transparent 12px
+        ),
+        linear-gradient(
+          170deg,
+          #F0E6D6 0%,
+          #F5EFE4 45%,
+          #EDE0CB 100%
+        );
+    }
+
+    /* Warm dual-radial glow (light version) */
+    #carousel-page::before {
+      content: '';
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 18% 22%, rgba(232, 196, 176, 0.22) 0%, transparent 52%),
+        radial-gradient(ellipse at 82% 80%, rgba(201, 169, 110, 0.12) 0%, transparent 48%);
+    }
+
+    /* ════════════════════════════════
+       SECTION HEADER
+    ════════════════════════════════ */
+    .carousel-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 40px 24px 0;
+      gap: 16px;
+    }
+
+    .carousel-header__titles { flex: 1; min-width: 0; }
+
+    .carousel-eyebrow {
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.55em;
+      text-indent: 0.55em;
+      color: var(--felt-rust);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .carousel-title {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: clamp(26px, 8vw, 36px);
+      color: var(--felt-dark);
+      line-height: 1.15;
+      letter-spacing: 0.06em;
+      /* subtle felt-paper shadow */
+      text-shadow: 1px 1px 0 rgba(122,78,45,0.15);
+    }
+
+    /* ─── Nav Buttons Group ─── */
+    .carousel-nav {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      padding-bottom: 4px;
+    }
+
+    .nav-btn {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: none; outline: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s, opacity 0.2s;
+      /* felt card style */
+      background: linear-gradient(160deg, #8B5E32 0%, #6B4220 100%);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.12) inset,
+        0 -2px 0 rgba(0,0,0,0.2) inset,
+        0 4px 12px rgba(45,27,14,0.28);
+      color: var(--felt-cream);
+      position: relative;
+    }
+    /* stitch */
+    .nav-btn::before {
+      content: '';
+      position: absolute; inset: 3px;
+      border-radius: 9px;
+      border: 1px dashed rgba(255,255,255,0.22);
+      pointer-events: none;
+    }
+    .nav-btn:active { transform: scale(0.9); }
+    .nav-btn.swiper-button-disabled {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+    }
+    .nav-btn svg { flex-shrink: 0; }
+
+    /* ════════════════════════════════
+       SWIPER
+    ════════════════════════════════ */
+    .carousel-swiper {
+      width: 100%;
+      /* top padding for shadow clearance, bottom for dot/pagination */
+      padding: 20px 0 28px !important;
+      /* side overflow shows peeking cards */
+      overflow: visible !important;
+    }
+
+    /* clip overflow on the outer wrapper, not the swiper itself */
+    .carousel-swiper-outer {
+      overflow: hidden;
+      margin-top: 20px;
+      /* left indent: first card aligns to 24px grid */
+      padding-left: 24px;
+    }
+
+    .swiper-slide {
+      /* peeking: each card = ~82% width so ~18% of next peeks */
+      width: 82%;
+      max-width: 320px;
+    }
+
+    /* ════════════════════════════════
+       CARD
+    ════════════════════════════════ */
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow:
+        0 2px 0  rgba(255,255,255,0.8) inset,
+        0 8px 28px rgba(45,27,14,0.10),
+        0 2px 6px  rgba(45,27,14,0.06);
+      /* GSAP entrance: starts invisible */
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    /* ─── Card Image ─── */
+    .card__image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, var(--felt-warm) 0%, var(--felt-blush) 100%);
+    }
+    .card__image-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .swiper-slide-active .card__image-wrap img {
+      transform: scale(1.03);
+    }
+
+    /* image placeholder shown when no real src */
+    .card__img-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+    }
+    .card__img-placeholder .ph-icon {
+      font-size: 32px; opacity: 0.45;
+    }
+    .card__img-placeholder .ph-label {
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(122,78,45,0.55);
+      letter-spacing: 0.2em;
+    }
+
+    /* warm vignette on image bottom */
+    .card__image-wrap::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 40%;
+      background: linear-gradient(transparent, rgba(45,27,14,0.12));
+      pointer-events: none;
+    }
+
+    /* ─── Card Body ─── */
+    .card__body {
+      padding: 20px 22px 26px;
+    }
+
+    .card__eyebrow {
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      color: var(--felt-rust);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .card__title {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: clamp(18px, 5.5vw, 22px);
+      color: var(--felt-dark);
+      letter-spacing: 0.05em;
+      line-height: 1.25;
+      margin-bottom: 10px;
+      text-shadow: 1px 1px 0 rgba(122,78,45,0.1);
+    }
+
+    .card__desc {
+      font-size: clamp(12px, 3.5vw, 13px);
+      font-weight: 300;
+      color: var(--felt-grey);
+      line-height: 1.8;
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── Felt stitch bottom accent ─── */
+    .card__stitch {
+      margin-top: 14px;
+      height: 1px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--felt-rust) 0px,
+        var(--felt-rust) 5px,
+        transparent 5px,
+        transparent 9px
+      );
+      opacity: 0.25;
+      border-radius: 99px;
+    }
+
+    /* ════════════════════════════════
+       PAGINATION DOTS
+    ════════════════════════════════ */
+    .swiper-pagination {
+      bottom: 0 !important;
+    }
+    .swiper-pagination-bullet {
+      width: 5px; height: 5px;
+      background: var(--felt-brown);
+      opacity: 0.2;
+      transition: opacity 0.25s, width 0.25s;
+      border-radius: 99px;
+    }
+    .swiper-pagination-bullet-active {
+      opacity: 0.75;
+      width: 16px;
+    }
+
+    /* ════════════════════════════════
+       FOOTER NOTE
+    ════════════════════════════════ */
+    .carousel-footer {
+      text-align: center;
+      padding: 8px 24px 0;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(122,78,45,0.35);
+      letter-spacing: 0.3em;
+    }
+
+    /* ════════════════════════════════
+       PAGE NAV HINTS (top / bottom)
+    ════════════════════════════════ */
+    .page-nav-btn {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      background: none;
+      padding: 8px 16px;
+    }
+
+    .page-nav-btn__pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: 99px;
+      background: rgba(245,239,228,0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px dashed rgba(122,78,45,0.28);
+      box-shadow:
+        0 2px 12px rgba(45,27,14,0.12),
+        0 1px 0 rgba(255,255,255,0.7) inset;
+      color: var(--felt-brown);
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-indent: 0.3em;
+      white-space: nowrap;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .page-nav-btn:active .page-nav-btn__pill {
+      transform: scale(0.94);
+      box-shadow: 0 1px 6px rgba(45,27,14,0.1);
+    }
+
+    /* ─── Up (return) — top ─── */
+    #page-nav-up {
+      top: calc(var(--safe-top) + 10px);
+      animation: bob-up 2.2s ease-in-out infinite;
+    }
+    @keyframes bob-up {
+      0%, 100% { transform: translateX(-50%) translateY(0);   }
+      50%       { transform: translateX(-50%) translateY(-5px); }
+    }
+
+    /* ─── Down (next) — bottom ─── */
+    #page-nav-down {
+      bottom: calc(var(--safe-bottom) + 10px);
+      animation: bob-down 2.2s ease-in-out infinite;
+    }
+    @keyframes bob-down {
+      0%, 100% { transform: translateX(-50%) translateY(0);  }
+      50%       { transform: translateX(-50%) translateY(5px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Page Nav: return to video-intro ── -->
+<button id="page-nav-up" class="page-nav-btn" aria-label="返回视频页" onclick="goBack()">
+  <div class="page-nav-btn__pill">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2 8 L6 4 L10 8" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    返回
+  </div>
+</button>
+
+<!-- ── Page Nav: go to next page ── -->
+<button id="page-nav-down" class="page-nav-btn" aria-label="进入下一页" onclick="goNext()">
+  <div class="page-nav-btn__pill">
+    继续
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2 4 L6 8 L10 4" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</button>
+
+<section id="carousel-page" aria-label="我们的故事">
+
+  <!-- ── Header ── -->
+  <header class="carousel-header">
+    <div class="carousel-header__titles">
+      <p class="carousel-eyebrow">Our Story</p>
+      <h2 class="carousel-title">我们的故事</h2>
+    </div>
+
+    <!-- Prev / Next navigation -->
+    <nav class="carousel-nav" role="group" aria-label="卡片导航">
+      <button type="button" id="nav-prev" class="nav-btn" aria-label="上一张">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <path d="M17.5 10C17.5 9.54 17.13 9.17 16.67 9.17H5.69L8.09 6.76C8.41 6.44 8.41 5.91 8.09 5.59C7.76 5.26 7.24 5.26 6.91 5.59L3.21 9.29C2.82 9.68 2.82 10.32 3.21 10.71L6.91 14.41C7.24 14.74 7.76 14.74 8.09 14.41C8.41 14.09 8.41 13.56 8.09 13.24L5.69 10.83H16.67C17.13 10.83 17.5 10.46 17.5 10Z" fill="currentColor"/>
+        </svg>
+      </button>
+      <button type="button" id="nav-next" class="nav-btn" aria-label="下一张">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <path d="M2.5 10C2.5 10.46 2.87 10.83 3.33 10.83H14.31L11.91 13.24C11.59 13.56 11.59 14.09 11.91 14.41C12.24 14.74 12.76 14.74 13.09 14.41L16.79 10.71C17.18 10.32 17.18 9.68 16.79 9.29L13.09 5.59C12.76 5.26 12.24 5.26 11.91 5.59C11.59 5.91 11.59 6.44 11.91 6.76L14.31 9.17H3.33C2.87 9.17 2.5 9.54 2.5 10Z" fill="currentColor"/>
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ── Swiper ── -->
+  <div class="carousel-swiper-outer">
+    <div class="swiper carousel-swiper" id="story-swiper">
+      <div class="swiper-wrapper">
+
+        <!-- ── Card 1: 初识 ── -->
+        <article class="swiper-slide" aria-label="相识">
+          <div class="card">
+            <div class="card__image-wrap">
+              <!--★ 替换为真实照片 src="./assets/story-1.jpg" -->
+              <img src="./assets/headshot3.jpg" alt="相识" aria-hidden="true"
+                   onerror="this.style.display='none'" />
+              <div class="card__img-placeholder">
+                <span class="ph-icon">🌸</span>
+                <span class="ph-label">照片占位 · 相识</span>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__eyebrow">2020 · Spring</p>
+              <h3 class="card__title">初见，是命中注定</h3>
+              <p class="card__desc">那年春天，在同一座城市的某个角落，我们相遇了。从此，彼此的故事开始了新的篇章。</p>
+              <div class="card__stitch"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- ── Card 2: 相知 ── -->
+        <article class="swiper-slide" aria-label="相知">
+          <div class="card">
+            <div class="card__image-wrap">
+              <!--★ 替换为真实照片 src="./assets/story-2.jpg" -->
+              <img src="./assets/headshot3.jpg" alt="相知" aria-hidden="true"
+                   onerror="this.style.display='none'" />
+              <div class="card__img-placeholder">
+                <span class="ph-icon">☕</span>
+                <span class="ph-label">照片占位 · 相知</span>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__eyebrow">2021 · Summer</p>
+              <h3 class="card__title">慢慢地，我了解了你</h3>
+              <p class="card__desc">一起走过的每个普通的下午，变成了我最珍贵的记忆。你的笑声，是我最喜欢听到的声音。</p>
+              <div class="card__stitch"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- ── Card 3: 旅行 ── -->
+        <article class="swiper-slide" aria-label="同行">
+          <div class="card">
+            <div class="card__image-wrap">
+              <!--★ 替换为真实照片 src="./assets/story-3.jpg" -->
+              <img src="./assets/headshot3.jpg" alt="同行" aria-hidden="true"
+                   onerror="this.style.display='none'" />
+              <div class="card__img-placeholder">
+                <span class="ph-icon">✈️</span>
+                <span class="ph-label">照片占位 · 同行</span>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__eyebrow">2022 · Autumn</p>
+              <h3 class="card__title">与你同行，哪里都是远方</h3>
+              <p class="card__desc">我们一起旅行，一起迷路，一起在陌生的城市找到属于我们的角落。</p>
+              <div class="card__stitch"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- ── Card 4: 求婚 ── -->
+        <article class="swiper-slide" aria-label="求婚">
+          <div class="card">
+            <div class="card__image-wrap">
+              <!--★ 替换为真实照片 src="./assets/story-4.jpg" -->
+              <img src="./assets/headshot3.jpg" alt="求婚" aria-hidden="true"
+                   onerror="this.style.display='none'" />
+              <div class="card__img-placeholder">
+                <span class="ph-icon">💍</span>
+                <span class="ph-label">照片占位 · 求婚</span>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__eyebrow">2025 · Winter</p>
+              <h3 class="card__title">「你愿意嫁给我吗？」</h3>
+              <p class="card__desc">那一刻，时间仿佛静止了。</p>
+              <div class="card__stitch"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- ── Card 5: 婚礼 ── -->
+        <article class="swiper-slide" aria-label="婚礼">
+          <div class="card">
+            <div class="card__image-wrap">
+              <!--★ 替换为真实照片 src="./assets/story-5.jpg" -->
+              <img src="./assets/headshot3.jpg" alt="婚礼" aria-hidden="true"
+                   onerror="this.style.display='none'" />
+              <div class="card__img-placeholder">
+                <span class="ph-icon">🎊</span>
+                <span class="ph-label">照片占位 · 婚礼</span>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__eyebrow">2026 · 05 · 01</p>
+              <h3 class="card__title">此刻，请见证我们</h3>
+              <p class="card__desc">感谢您在这一天陪伴我们。您的到来，是我们最珍贵的礼物，也是这一天最美的风景。</p>
+              <div class="card__stitch"></div>
+            </div>
+          </div>
+        </article>
+
+      </div><!-- /.swiper-wrapper -->
+
+      <!-- Pagination dots -->
+      <div class="swiper-pagination"></div>
+    </div><!-- /.swiper -->
+  </div><!-- /.carousel-swiper-outer -->
+
+  <p class="carousel-footer">左右滑动查看更多</p>
+
+</section>
+
+<script>
+/* ══════════════════════════════════
+   SWIPER INIT
+══════════════════════════════════ */
+const swiper = new Swiper('#story-swiper', {
+  // Show 1 card + peek of next
+  slidesPerView: 'auto',
+  spaceBetween: 14,
+
+  // Touch / drag
+  grabCursor: true,
+  touchRatio: 1,
+  touchAngle: 45,          // allow slight diagonal swipes
+  threshold: 8,             // min drag px before slide starts
+
+  // Resistance at first/last slide
+  resistance: true,
+  resistanceRatio: 0.65,
+
+  // Smooth deceleration
+  freeMode: false,
+  speed: 380,
+
+  // Custom nav buttons
+  navigation: {
+    prevEl: '#nav-prev',
+    nextEl: '#nav-next',
+    disabledClass: 'swiper-button-disabled',
+  },
+
+  // Pagination dots
+  pagination: {
+    el: '.swiper-pagination',
+    clickable: true,
+    dynamicBullets: false,
+  },
+
+  // Keyboard for desktop preview
+  keyboard: { enabled: true, onlyInViewport: true },
+
+  // a11y
+  a11y: {
+    prevSlideMessage: '上一张',
+    nextSlideMessage: '下一张',
+  },
+});
+
+/* ══════════════════════════════════
+   GSAP ENTRANCE ANIMATION
+══════════════════════════════════ */
+function animateCardsIn() {
+  gsap.to('.card', {
+    opacity: 1, y: 0,
+    duration: 0.55, ease: 'power2.out', stagger: 0.10,
+  });
+  gsap.from('.carousel-header', {
+    y: -20, opacity: 0,
+    duration: 0.5, ease: 'power2.out',
+  });
+  // Fade in nav hints after cards settle
+  gsap.from(['#page-nav-up', '#page-nav-down'], {
+    opacity: 0, y: 10,
+    duration: 0.45, ease: 'power2.out',
+    delay: 0.5, stagger: 0.1,
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', animateCardsIn);
+} else {
+  setTimeout(animateCardsIn, 120);
+}
+window.carouselPage = { enter: animateCardsIn };
+
+/* ══════════════════════════════════
+   PAGE NAVIGATION
+══════════════════════════════════ */
+let transitioning = false;
+
+function goBack() {
+  if (transitioning) return;
+  transitioning = true;
+
+  gsap.timeline()
+    .to(['#page-nav-up', '#page-nav-down', '.carousel-header', '.carousel-swiper-outer', '.carousel-footer'], {
+      opacity: 0, y: -24,
+      duration: 0.35, ease: 'power2.in', stagger: 0.04,
+    })
+    .call(() => { window.location.href = './video-intro.html'; });
+}
+
+function goNext() {
+  if (transitioning) return;
+  transitioning = true;
+
+  gsap.timeline()
+    .to(['#page-nav-down', '#page-nav-up', '.carousel-footer', '.carousel-swiper-outer', '.carousel-header'], {
+      opacity: 0, y: 24,
+      duration: 0.35, ease: 'power2.in', stagger: 0.04,
+    })
+    .call(() => { window.location.href = './invitation.html'; });
+}
+
+/* ══════════════════════════════════
+   VERTICAL SWIPE DETECTION
+   Distinguishes from Swiper's horizontal
+══════════════════════════════════ */
+let vStartY = 0, vStartX = 0, vSwiping = false;
+
+document.addEventListener('touchstart', (e) => {
+  vStartY = e.touches[0].clientY;
+  vStartX = e.touches[0].clientX;
+  vSwiping = true;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (!vSwiping) return;
+  vSwiping = false;
+
+  const dy = vStartY - e.changedTouches[0].clientY; // + = finger up
+  const dx = Math.abs(vStartX - e.changedTouches[0].clientX);
+
+  // Only act on clearly vertical swipes (> 70px, and more vertical than horizontal)
+  if (Math.abs(dy) < 70 || dx > Math.abs(dy) * 0.65) return;
+
+  if (dy > 0) {
+    // Finger moved UP → next page
+    goNext();
+  } else {
+    // Finger moved DOWN → return to video-intro
+    goBack();
+  }
+}, { passive: true });
+</script>
+</body>
+</html>

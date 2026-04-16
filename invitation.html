@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+                 user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>黄啸宇 & 康越 · 婚礼详情</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ─── Shared tokens (duplicated in map.html for standalone use) ─── */
+    :root {
+      --champagne: #F5E6CA;
+      --ivory:     #FFF8F0;
+      --gold:      #C9A96E;
+      --gold-l:    #E8D5A3;
+      --gold-d:    #9E7A3F;
+      --bg-deep:   #1A0C06;
+      --bg-mid:    #2C1810;
+      --bg-warm:   #3D1F0D;
+      --safe-top:    env(safe-area-inset-top,    0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      background: var(--bg-deep);
+      font-family: 'Noto Sans SC', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      overflow-x: hidden;
+    }
+
+    /* ── Shared nav pills ── */
+    .page-nav-btn {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      z-index: 80; cursor: pointer; border: none; background: none;
+      padding: 8px 16px; -webkit-tap-highlight-color: transparent;
+    }
+    .page-nav-btn__pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 99px;
+      background: rgba(26,12,6,0.82);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px dashed rgba(201,169,110,0.38);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 1px 0 rgba(201,169,110,0.08) inset;
+      color: var(--gold-l); font-family: inherit;
+      font-size: 11px; font-weight: 300;
+      letter-spacing: 0.3em; text-indent: 0.3em; white-space: nowrap;
+      transition: transform 0.15s;
+    }
+    .page-nav-btn:active .page-nav-btn__pill { transform: scale(0.93); }
+    #page-nav-up   { top: calc(var(--safe-top) + 10px); animation: bob-up   2.2s ease-in-out infinite; }
+    #page-nav-down { bottom: calc(var(--safe-bottom) + 10px); animation: bob-down 2.2s ease-in-out infinite; }
+    @keyframes bob-up   { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-5px)} }
+    @keyframes bob-down { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(5px)} }
+
+    /* ── Page wrapper + fabric texture ── */
+    #invitation-page {
+      min-height: 100svh; position: relative; overflow: hidden;
+      padding-top:    calc(var(--safe-top)    + 64px);
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+      padding-left: 20px; padding-right: 20px;
+      background-color: var(--bg-mid);
+      background-image:
+        repeating-linear-gradient(0deg,   rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 5px),
+        repeating-linear-gradient(90deg,  rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 5px),
+        repeating-linear-gradient(45deg,  rgba(196,133,90,0.025)  0px, rgba(196,133,90,0.025)  1px, transparent 1px, transparent 12px),
+        linear-gradient(170deg, var(--bg-deep) 0%, var(--bg-warm) 55%, var(--bg-deep) 100%);
+    }
+    #invitation-page::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 20% 25%, rgba(196,133,90,0.13) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 78%, rgba(201,169,110,0.09) 0%, transparent 48%);
+    }
+
+    /* ── Section header ── */
+    .section-label {
+      font-size: 9px; font-weight: 100; letter-spacing: 0.6em; text-indent: 0.6em;
+      color: var(--gold); text-transform: uppercase; text-align: center; margin-bottom: 10px;
+    }
+    .section-heading {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: clamp(30px, 9vw, 42px); text-align: center; color: var(--champagne);
+      letter-spacing: 0.12em;
+      text-shadow: 1px 1px 0 rgba(158,122,63,0.55), 2px 2px 0 rgba(158,122,63,0.28), 0 4px 18px rgba(0,0,0,0.5);
+      margin-bottom: 18px;
+    }
+    .ornament-line {
+      display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 28px;
+    }
+    .ornament-line::before { content: ''; width: 44px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); opacity: 0.4; }
+    .ornament-line::after  { content: ''; width: 44px; height: 1px; background: linear-gradient(90deg, var(--gold), transparent); opacity: 0.4; }
+    .ornament-line span { font-size: 14px; color: var(--gold); opacity: 0.65; }
+
+    /* ── Detail cards ── */
+    .detail-card {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: linear-gradient(145deg, rgba(74,38,18,0.75) 0%, rgba(55,25,10,0.85) 100%);
+      border-radius: 18px 5px 20px 7px / 7px 20px 5px 18px;
+      border: 2px dashed rgba(245,230,202,0.28);
+      padding: 18px 16px; margin-bottom: 14px; position: relative;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.38));
+      transition: filter 0.2s;
+    }
+    .detail-card:active { filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.28)); }
+    .detail-card::before {
+      content: ''; position: absolute; top: -1px; left: 14px; right: 14px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(245,230,202,0.22), transparent);
+    }
+    .detail-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: rgba(201,169,110,0.12);
+      border: 1px dashed rgba(201,169,110,0.25);
+      border-radius: 10px 3px 12px 3px / 3px 12px 3px 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .detail-content { flex: 1; min-width: 0; }
+    .detail-label {
+      font-size: 9px; font-weight: 100; letter-spacing: 0.45em; text-indent: 0.45em;
+      color: var(--champagne); text-transform: uppercase; margin-bottom: 5px; opacity: 0.75;
+    }
+    .detail-value {
+      font-size: clamp(14px, 4.2vw, 16px); font-weight: 600; color: var(--ivory);
+      line-height: 1.45; margin-bottom: 3px; letter-spacing: 0.04em;
+    }
+    .detail-sub {
+      font-size: clamp(11px, 3.2vw, 12px); font-weight: 300;
+      color: rgba(245,230,202,0.45); letter-spacing: 0.05em; line-height: 1.6;
+    }
+
+    /* ── Copy block ── */
+    .copy-block {
+      margin-top: 28px; display: flex; flex-direction: column; align-items: center; gap: 0;
+    }
+    #btn-copy-info {
+      position: relative; display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 32px; cursor: pointer; border: none;
+      background: linear-gradient(145deg, #6B3E1E 0%, #4E2A0E 100%);
+      border-radius: 10px 3px 12px 5px / 5px 12px 3px 10px;
+      border: 2px dashed rgba(245,230,202,0.38);
+      font-family: inherit; font-size: clamp(13px, 4vw, 14px);
+      font-weight: 600; letter-spacing: 0.3em; color: var(--champagne);
+      filter: drop-shadow(2px 3px 6px rgba(0,0,0,0.4));
+    }
+    #btn-copy-info::before { content: '✦'; position: absolute; top: 5px; left: 8px; font-size: 6px; color: rgba(245,230,202,0.35); }
+    #btn-copy-info::after  { content: '✦'; position: absolute; bottom: 5px; right: 8px; font-size: 6px; color: rgba(245,230,202,0.35); }
+    #btn-copy-info.copied {
+      background: linear-gradient(145deg, #2E5C2A 0%, #1E3D1B 100%);
+      border-color: rgba(160,207,155,0.4); color: #A8CFA0;
+    }
+    .copy-hint { margin-top: 10px; font-size: 10px; font-weight: 100; color: rgba(245,230,202,0.28); letter-spacing: 0.25em; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      z-index: 200; padding: 12px 24px;
+      background: rgba(20,10,4,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(201,169,110,0.25); border-radius: 99px;
+      font-size: 13px; font-weight: 300; color: var(--champagne); letter-spacing: 0.15em;
+      white-space: nowrap; pointer-events: none; opacity: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    /* ── Fade-up ── */
+    .fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .fade-up:nth-child(1){transition-delay:0.00s} .fade-up:nth-child(2){transition-delay:0.07s}
+    .fade-up:nth-child(3){transition-delay:0.13s} .fade-up:nth-child(4){transition-delay:0.18s}
+    .fade-up:nth-child(5){transition-delay:0.23s} .fade-up:nth-child(6){transition-delay:0.28s}
+    .fade-up:nth-child(7){transition-delay:0.33s} .fade-up:nth-child(8){transition-delay:0.37s}
+  </style>
+</head>
+<body>
+
+<div id="toast">信息已复制，可直接粘贴</div>
+
+<button id="page-nav-up" class="page-nav-btn" onclick="goBack()">
+  <div class="page-nav-btn__pill">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    返回
+  </div>
+</button>
+
+<button id="page-nav-down" class="page-nav-btn" onclick="goNext()">
+  <div class="page-nav-btn__pill">
+    查看地图
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</button>
+
+<div id="invitation-page">
+
+  <p class="section-label fade-up">Wedding Details</p>
+  <h2 class="section-heading fade-up">婚礼详情</h2>
+  <div class="ornament-line fade-up"><span>✦</span></div>
+
+  <div class="detail-card fade-up">
+    <div class="detail-icon">📅</div>
+    <div class="detail-content">
+      <p class="detail-label">Date &amp; Time</p>
+      <p class="detail-value">2026年5月1日（星期五）</p>
+      <p class="detail-sub">中午 12:00 — 婚礼仪式开始</p>
+    </div>
+  </div>
+
+  <div class="detail-card fade-up">
+    <div class="detail-icon">🏨</div>
+    <div class="detail-content">
+      <p class="detail-label">Venue</p>
+      <p class="detail-value">北京香格里拉饭店</p>
+      <p class="detail-sub">宴会厅 · 二层金色大厅</p>
+    </div>
+  </div>
+
+  <div class="detail-card fade-up">
+    <div class="detail-icon">📍</div>
+    <div class="detail-content">
+      <p class="detail-label">Address</p>
+      <p class="detail-value">北京市海淀区</p>
+      <p class="detail-sub">中关村南大街33号</p>
+    </div>
+  </div>
+
+  <div class="detail-card fade-up">
+    <div class="detail-icon">🎁</div>
+    <div class="detail-content">
+      <p class="detail-label">RSVP</p>
+      <p class="detail-value">请于4月20日前确认出席</p>
+      <p class="detail-sub">联系新郎: 138-XXXX-XXXX</p>
+    </div>
+  </div>
+
+  <div class="copy-block fade-up">
+    <button id="btn-copy-info" onclick="copyWeddingInfo()">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <rect x="1.5" y="4" width="9" height="10.5" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M5 4V3A1.5 1.5 0 016.5 1.5h7A1.5 1.5 0 0115 3v8.5A1.5 1.5 0 0113.5 13H11" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      <span id="copy-btn-label">复制婚礼信息</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+/* ── IntersectionObserver fade-up ── */
+(function(){
+  if(!('IntersectionObserver' in window)){
+    document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('visible')); return;
+  }
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+  },{threshold:0.1,rootMargin:'0px 0px -28px 0px'});
+  document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+})();
+
+/* ── Copy ── */
+const WEDDING_TEXT =
+  '【黄啸宇 & 康越 婚礼邀请】' +
+  '时间：2026年5月1日 12:00；' +
+  '地点：北京香格里拉饭店(二层金色大厅)；' +
+  '地址：海淀区中关村南大街33号。';
+
+function copyWeddingInfo() {
+  const btn=document.getElementById('btn-copy-info');
+  const label=document.getElementById('copy-btn-label');
+  function onSuccess(){
+    label.textContent='✅ 已复制'; btn.classList.add('copied');
+    gsap.timeline()
+      .to(btn,{scale:0.90,duration:0.10,ease:'power2.in'})
+      .to(btn,{scale:1.06,duration:0.18,ease:'power2.out'})
+      .to(btn,{scale:1.00,duration:0.22,ease:'elastic.out(1,0.5)'});
+    showToast();
+    setTimeout(()=>{ label.textContent='复制婚礼信息'; btn.classList.remove('copied'); },1500);
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(WEDDING_TEXT).then(onSuccess).catch(fb);
+  } else { fb(); }
+  function fb(){
+    const ta=document.createElement('textarea');
+    ta.value=WEDDING_TEXT; ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{document.execCommand('copy');onSuccess();}catch(e){}
+    ta.remove();
+  }
+}
+
+let toastTl=null;
+function showToast(){
+  const t=document.getElementById('toast');
+  if(toastTl)toastTl.kill();
+  toastTl=gsap.timeline()
+    .to(t,{opacity:1,scale:1,duration:0.25,ease:'back.out(1.6)'})
+    .to(t,{opacity:0,scale:0.9,duration:0.30,ease:'power2.in',delay:1.1});
+}
+
+/* ── Navigation ── */
+let transitioning=false;
+function goBack(){
+  if(transitioning)return; transitioning=true;
+  gsap.to(['#invitation-page','#page-nav-up','#page-nav-down'],{
+    opacity:0,y:-24,duration:0.32,ease:'power2.in',
+    onComplete:()=>{ window.location.href='./card-carousel.html'; }
+  });
+}
+function goNext(){
+  if(transitioning)return; transitioning=true;
+  gsap.to(['#invitation-page','#page-nav-up','#page-nav-down'],{
+    opacity:0,y:24,duration:0.32,ease:'power2.in',
+    onComplete:()=>{ window.location.href='./map.html'; }
+  });
+}
+
+/* ── Swipe ── */
+let vY=0,vX=0;
+document.addEventListener('touchstart',e=>{vY=e.touches[0].clientY;vX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dy=vY-e.changedTouches[0].clientY, dx=Math.abs(vX-e.changedTouches[0].clientX);
+  if(Math.abs(dy)<70||dx>Math.abs(dy)*0.65)return;
+  dy>0?goNext():goBack();
+},{passive:true});
+
+/* ── Entrance ── */
+window.addEventListener('DOMContentLoaded',()=>{
+  gsap.from(['#page-nav-up','#page-nav-down'],{opacity:0,y:8,duration:0.5,ease:'power2.out',delay:0.4,stagger:0.12});
+  gsap.set('#toast',{scale:0.85});
+});
+</script>
+</body>
+</html>

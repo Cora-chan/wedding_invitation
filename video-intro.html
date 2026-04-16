@@ -299,16 +299,8 @@
       white-space: nowrap;
     }
 
-    /* Blinking cursor after typewriter */
-    #btn-text::after {
-      content: '|';
-      display: inline-block;
-      color: rgba(27,42,74,0.6);
-      animation: cursor-blink 0.85s step-end infinite;
-      margin-left: 2px;
-      opacity: 0; /* shown by JS after typing completes */
-    }
-    #btn-text.typing-done::after { opacity: 1; }
+
+
 
     @keyframes cursor-blink {
       0%, 100% { opacity: 1; }
@@ -418,6 +410,15 @@
     <!-- ══ SWIPE HINT ══ -->
     <div id="swipe-hint">
       <div class="hint-ring">
+        <svg id="hint-svg" width="28" height="28" viewBox="0 0 28 28" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 17.5 L14 10.5 L21 17.5"
+                stroke="rgba(245,239,228,0.9)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 22 L14 15 L21 22"
+                stroke="rgba(245,239,228,0.45)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
       <p class="hint-text">滑动查看详情</p>
     </div>
@@ -674,9 +675,9 @@ function onVideoEnded() {
     onComplete: () => { $swipeHint.style.pointerEvents = 'auto'; },
   });
 
-  // Bounce loop on chevron icon
+  // Bounce loop on chevron icon (向上浮动)
   gsap.to('#hint-svg', {
-    y: 7,
+    y: -7,
     duration: 0.7,
     ease: 'sine.inOut',
     yoyo: true,
@@ -751,12 +752,9 @@ function triggerPageTransition() {
   // 4. BGM crossfade (fade out)
     .to($bgm, { volume: 0, duration: 0.8, ease: 'power2.in' }, '<')
 
-  // 5. Finalize
+  // 5. Navigate to card carousel page
     .call(() => {
-      // TODO: replace with actual next-page navigation logic
-      // e.g. window.location.href = './details.html'
-      //      or mount next Vue/React component
-      console.log('[Wedding H5] → Page transition complete. Mount next section here.');
+      window.location.href = './card-carousel.html';
     });
 }
 </script>

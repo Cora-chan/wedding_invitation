@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+                 user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>黄啸宇 & 康越 · 结尾</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --gold:        #C9A96E;
+      --gold-l:      #E8D5A3;
+      --felt-rust:   #C4855A;
+      --felt-cream:  #F5EFE4;
+      --dark:        #2C1810;
+      --safe-top:    env(safe-area-inset-top,    0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Noto Sans SC', sans-serif;
+    }
+
+    /* ── Full-screen video ── */
+    #ending-video {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    /* ── Loop counter badge ── */
+    #loop-counter {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 18px);
+      right: 20px;
+      z-index: 10;
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.22);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    /* ── Back button ── */
+    #btn-back {
+      position: fixed;
+      top: calc(var(--safe-top) + 14px);
+      left: 20px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 99px;
+      border: 1px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(255,255,255,0.85);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 0.25em;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: transform 0.12s;
+    }
+    #btn-back:active { transform: scale(0.93); }
+
+    /* ════════════════════════════════
+       EASTER EGG OVERLAY
+    ════════════════════════════════ */
+    #easter-egg {
+      position: fixed; inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 28px;
+      padding-top:    calc(var(--safe-top)    + 40px);
+      padding-bottom: calc(var(--safe-bottom) + 40px);
+
+      /* frosted dark overlay */
+      background: rgba(10, 5, 2, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+
+      opacity: 0;
+      pointer-events: none;
+    }
+    #easter-egg.visible {
+      pointer-events: auto;
+    }
+
+    /* Confetti particles (rendered by JS) */
+    .confetti-dot {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Trophy icon */
+    .egg-trophy {
+      font-size: 52px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 16px rgba(201,169,110,0.6));
+    }
+
+    /* "恭喜！" */
+    .egg-congrats {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: clamp(36px, 11vw, 50px);
+      color: var(--gold);
+      letter-spacing: 0.12em;
+      text-shadow:
+        1px 1px 0 rgba(158,122,63,0.6),
+        2px 2px 0 rgba(158,122,63,0.3),
+        0 4px 20px rgba(201,169,110,0.4);
+      margin-bottom: 10px;
+    }
+
+    /* Ornament divider */
+    .egg-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0 20px;
+    }
+    .egg-divider::before, .egg-divider::after {
+      content: '';
+      width: 40px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+      opacity: 0.4;
+    }
+    .egg-divider::after {
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+    .egg-divider span { font-size: 14px; color: var(--gold); opacity: 0.65; }
+
+    /* Main message */
+    .egg-message {
+      font-size: clamp(13px, 4vw, 15px);
+      font-weight: 300;
+      color: rgba(232,213,163,0.85);
+      text-align: center;
+      line-height: 2;
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+    }
+    .egg-message strong {
+      color: var(--gold-l);
+      font-weight: 400;
+    }
+
+    /* Email card */
+    .egg-email-card {
+      width: 100%;
+      background: rgba(201,169,110,0.08);
+      border: 1px dashed rgba(201,169,110,0.35);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .egg-email-label {
+      font-size: 9px;
+      font-weight: 300;
+      letter-spacing: 0.5em;
+      text-indent: 0.5em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .egg-email-addr {
+      font-size: clamp(13px, 3.8vw, 15px);
+      font-weight: 400;
+      color: var(--gold-l);
+      letter-spacing: 0.05em;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
+    /* Copy button */
+    #btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 18px;
+      border-radius: 99px;
+      border: 1px solid rgba(201,169,110,0.35);
+      background: rgba(201,169,110,0.12);
+      color: var(--gold-l);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.25em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.12s;
+    }
+    #btn-copy:active { transform: scale(0.93); }
+    #btn-copy.copied {
+      background: rgba(139,175,124,0.2);
+      border-color: rgba(139,175,124,0.4);
+      color: #A8CFA0;
+    }
+
+    /* Mailto button */
+    #btn-mailto {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--gold) 0%, #9E7A3F 100%);
+      color: var(--dark);
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: clamp(13px, 4vw, 15px);
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow:
+        0 4px 20px rgba(158,122,63,0.4),
+        0 1px 0 rgba(255,255,255,0.22) inset;
+      position: relative; overflow: hidden;
+      transition: transform 0.12s;
+    }
+    #btn-mailto::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(rgba(255,255,255,0.12), transparent);
+      pointer-events: none;
+    }
+    #btn-mailto:active { transform: scale(0.97); }
+
+    .egg-footnote {
+      margin-top: 16px;
+      font-size: 10px;
+      font-weight: 300;
+      color: rgba(201,169,110,0.3);
+      text-align: center;
+      letter-spacing: 0.2em;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+<video
+  id="ending-video"
+  src="./assets/ending-video-ver2.mp4"
+  playsinline
+  webkit-playsinline
+  x5-video-player-type="h5"
+  x5-video-player-fullscreen="false"
+  preload="auto"
+  muted
+></video>
+
+<!-- Loop count watermark -->
+<div id="loop-counter"></div>
+
+<!-- Back button -->
+<button id="btn-back" onclick="goBack()">
+  <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+    <path d="M2 8 L6 4 L10 8" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  返回
+</button>
+
+<!-- ════ EASTER EGG OVERLAY ════ -->
+<div id="easter-egg" role="dialog" aria-modal="true" aria-label="彩蛋">
+
+  <div class="egg-trophy">🏆</div>
+  <p class="egg-congrats">恭喜！</p>
+
+  <div class="egg-divider"><span>✦</span></div>
+
+  <p class="egg-message">
+    你已经坚持看完了<strong>一百遍</strong>！<br />
+    这份毅力与专注，令人敬佩。<br />
+    截图此页面，发送至下方邮箱，<br />
+    将获赠<strong>神秘奖品一份</strong> 🎁
+  </p>
+
+  <div class="egg-email-card">
+    <p class="egg-email-label">发送截图至</p>
+    <p class="egg-email-addr" id="email-addr">kangyue9323@gmail.com</p>
+    <button id="btn-copy" onclick="copyEmail()">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+        <rect x="1" y="3" width="7" height="8" rx="1.5"
+              stroke="currentColor" stroke-width="1.2"/>
+        <path d="M4 3V2.5A1.5 1.5 0 015.5 1h3A1.5 1.5 0 0110 2.5v6A1.5 1.5 0 018.5 10H8"
+              stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      复制邮箱
+    </button>
+  </div>
+
+  <a id="btn-mailto"
+     href="mailto:kangyue9323@gmail.com?subject=婚礼邀请函彩蛋截图&body=我看了一百遍！来领奖品啦！">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="3.5" width="13" height="9" rx="1.5"
+            stroke="currentColor" stroke-width="1.3"/>
+      <path d="M1.5 5L8 9.5L14.5 5"
+            stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    发送邮件领奖
+  </a>
+
+  <p class="egg-footnote">
+    微信内请截图后手动发送邮件<br/>
+    奖品数量有限，先到先得
+  </p>
+</div>
+
+<script>
+const video      = document.getElementById('ending-video');
+const btnBack    = document.getElementById('btn-back');
+const easterEgg  = document.getElementById('easter-egg');
+const loopBadge  = document.getElementById('loop-counter');
+
+const LOOP_TARGET = 100;
+let loopCount = 0;
+let leaving   = false;
+
+/* ══════════════════════════════════
+   AUTO-PLAY
+══════════════════════════════════ */
+function tryPlay() {
+  const p = video.play();
+  if (p) p.catch(() => { video.muted = true; video.play().catch(() => {}); });
+}
+
+if (typeof WeixinJSBridge === 'undefined') {
+  document.addEventListener('WeixinJSBridgeReady', tryPlay, { once: true });
+} else {
+  tryPlay();
+}
+video.addEventListener('canplay', tryPlay, { once: true });
+
+/* ══════════════════════════════════
+   LOOP COUNTER
+══════════════════════════════════ */
+video.addEventListener('ended', onLoopEnd);
+
+function onLoopEnd() {
+  loopCount++;
+  updateBadge();
+
+  if (loopCount >= LOOP_TARGET) {
+    video.removeEventListener('ended', onLoopEnd);
+    showEasterEgg();
+    return;
+  }
+
+  // replay
+  video.currentTime = 0;
+  tryPlay();
+}
+
+function updateBadge() {
+  const remaining = LOOP_TARGET - loopCount;
+  loopBadge.textContent = remaining > 0
+    ? `× ${loopCount} / ${LOOP_TARGET}`
+    : '';
+}
+
+/* ══════════════════════════════════
+   EASTER EGG REVEAL
+══════════════════════════════════ */
+function showEasterEgg() {
+  // Freeze video on last frame
+  video.pause();
+
+  // Spawn confetti
+  spawnConfetti();
+
+  // Fade in overlay
+  easterEgg.classList.add('visible');
+  gsap.to(easterEgg, {
+    opacity: 1, duration: 0.8, ease: 'power2.out',
+  });
+
+  // Trophy bounce
+  gsap.from('.egg-trophy', {
+    scale: 0, rotation: -15,
+    duration: 0.7, ease: 'back.out(1.8)', delay: 0.3,
+  });
+
+  // Stagger text
+  gsap.from(['.egg-congrats', '.egg-divider', '.egg-message', '.egg-email-card', '#btn-mailto', '.egg-footnote'], {
+    opacity: 0, y: 20,
+    duration: 0.5, ease: 'power2.out',
+    stagger: 0.08, delay: 0.5,
+  });
+}
+
+/* ══════════════════════════════════
+   CONFETTI
+══════════════════════════════════ */
+function spawnConfetti() {
+  const colors = ['#C9A96E','#E8D5A3','#C4855A','#8BAF7C','#E8C4B0','#fff'];
+  for (let i = 0; i < 55; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-dot';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width  = (Math.random() * 7 + 4) + 'px';
+    el.style.height = (Math.random() * 7 + 4) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+
+    gsap.fromTo(el,
+      {
+        x: window.innerWidth  * Math.random(),
+        y: -20,
+        rotation: Math.random() * 360,
+        opacity: 1,
+      },
+      {
+        y: window.innerHeight + 40,
+        x: '+=' + ((Math.random() - 0.5) * 160),
+        rotation: '+=' + (Math.random() * 540),
+        opacity: 0,
+        duration: 2.2 + Math.random() * 2,
+        ease: 'power1.in',
+        delay: Math.random() * 1.2,
+        onComplete: () => el.remove(),
+      }
+    );
+  }
+}
+
+/* ══════════════════════════════════
+   COPY EMAIL
+══════════════════════════════════ */
+function copyEmail() {
+  const addr = 'kangyue9323@gmail.com';
+  const btn  = document.getElementById('btn-copy');
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(addr).then(onCopied).catch(fallback);
+  } else {
+    fallback();
+  }
+
+  function fallback() {
+    // iOS / WeChat fallback
+    const ta = document.createElement('textarea');
+    ta.value = addr;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); onCopied(); } catch(e) {}
+    ta.remove();
+  }
+
+  function onCopied() {
+    btn.classList.add('copied');
+    btn.querySelector('span') && (btn.querySelector('span').textContent = '已复制');
+    btn.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = '已复制'; });
+    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M2 6.5L4.5 9L10 3" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/></svg> 已复制`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+        <rect x="1" y="3" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M4 3V2.5A1.5 1.5 0 015.5 1h3A1.5 1.5 0 0110 2.5v6A1.5 1.5 0 018.5 10H8"
+              stroke="currentColor" stroke-width="1.2"/></svg> 复制邮箱`;
+    }, 2500);
+  }
+}
+
+/* ══════════════════════════════════
+   NAVIGATION
+══════════════════════════════════ */
+function goBack() {
+  if (leaving) return;
+  leaving = true;
+  video.pause();
+  gsap.to([video, btnBack, easterEgg, loopBadge], {
+    opacity: 0, duration: 0.35, ease: 'power2.in',
+    onComplete: () => { window.location.href = './map.html'; },
+  });
+}
+
+/* ── Fade in back button ── */
+window.addEventListener('DOMContentLoaded', () => {
+  gsap.to(btnBack, { opacity: 1, duration: 0.5, delay: 0.6, ease: 'power2.out' });
+});
+
+/* ── Swipe down → go back ── */
+let vStartY = 0;
+document.addEventListener('touchstart', e => {
+  vStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  const dy = vStartY - e.changedTouches[0].clientY;
+  if (dy < -70) goBack();
+}, { passive: true });
+</script>
+</body>
+</html>
