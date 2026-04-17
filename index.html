@@ -10,32 +10,44 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>黄啸宇 & 康越 · 婚礼邀请</title>
 
-  <!-- Google Fonts: handwriting + thin sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300&display=swap" rel="stylesheet" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
   <style>
-    /* ─── CSS Variables ─── */
+    /* ════════════════════════════════════════
+       TOKENS
+    ════════════════════════════════════════ */
     :root {
-      --felt-cream:   #F5EFE4;
-      --felt-warm:    #E8D5B7;
-      --felt-blush:   #E8C4B0;
-      --felt-rust:    #C4855A;
-      --felt-brown:   #7A4E2D;
-      --felt-dark:    #2D1B0E;
-      --felt-green:   #8BAF7C;
-      --felt-muted:   rgba(245, 239, 228, 0.85);
-      --safe-top:     env(safe-area-inset-top, 0px);
-      --safe-bottom:  env(safe-area-inset-bottom, 0px);
-      --safe-left:    env(safe-area-inset-left, 0px);
-      --safe-right:   env(safe-area-inset-right, 0px);
+      /* felt palette */
+      --felt-cream:  #F5EFE4;
+      --felt-warm:   #E8D5B7;
+      --felt-blush:  #E8C4B0;
+      --felt-rust:   #C4855A;
+      --felt-brown:  #7A4E2D;
+      --felt-dark:   #2D1B0E;
+      --felt-green:  #8BAF7C;
+      --felt-grey:   #5C5047;
+      /* gold palette (invitation / map / ending) */
+      --champagne:   #F5E6CA;
+      --ivory:       #FFF8F0;
+      --gold:        #C9A96E;
+      --gold-l:      #E8D5A3;
+      --gold-d:      #9E7A3F;
+      --bg-deep:     #1A0C06;
+      --bg-mid:      #2C1810;
+      --bg-warm:     #3D1F0D;
+      /* safe areas */
+      --safe-top:    env(safe-area-inset-top,    0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* ─── Reset ─── */
+    /* ════════════════════════════════════════
+       RESET
+    ════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
@@ -48,714 +60,1325 @@
       touch-action: none;
     }
 
-    /* ─── Root Page Stack ─── */
-    #app {
+    #app { position: fixed; inset: 0; overflow: hidden; }
+
+    /* ════════════════════════════════════════
+       PAGE SYSTEM
+       All pages are position:fixed overlays.
+       navigateTo() fades them in/out via GSAP.
+    ════════════════════════════════════════ */
+    .page {
       position: fixed; inset: 0;
-      overflow: hidden;
+      display: none;        /* hidden by default   */
+      opacity: 1;
+    }
+    /* Scrollable pages: section itself scrolls */
+    .page--scroll {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
 
-    /* ════════════════════════════════
-       LOADER
-    ════════════════════════════════ */
+    /* ════════════════════════════════════════
+       MUSIC TOGGLE BUTTON (fixed, top-left)
+    ════════════════════════════════════════ */
+    #music-toggle {
+      position: fixed;
+      top: calc(var(--safe-top) + 14px);
+      left: 18px;
+      z-index: 300;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(20,10,5,0.52);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(255,255,255,0.90);
+      font-size: 17px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;        /* shown after start  */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.30);
+      outline: none;
+    }
+    #music-toggle.visible  { display: flex; }
+    #music-toggle.playing  { animation: music-pulse 2s ease-out infinite; border-color: rgba(196,133,90,0.5); }
+    #music-toggle:not(.playing) { opacity: 0.45; }
+    @keyframes music-pulse {
+      0%   { box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 0 0 0   rgba(196,133,90,0.55); }
+      70%  { box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 0 0 9px rgba(196,133,90,0);    }
+      100% { box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 0 0 0   rgba(196,133,90,0);    }
+    }
+
+    /* ════════════════════════════════════════
+       SHARED: PAGE-NAV PILL BUTTONS
+    ════════════════════════════════════════ */
+    .page-nav-btn {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      z-index: 80; cursor: pointer; border: none; background: none;
+      padding: 8px 16px; -webkit-tap-highlight-color: transparent;
+    }
+    .page-nav-btn__pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 99px;
+      background: rgba(26,12,6,0.82);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px dashed rgba(201,169,110,0.38);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 1px 0 rgba(201,169,110,0.08) inset;
+      color: var(--gold-l); font-family: 'Noto Sans SC', sans-serif;
+      font-size: 11px; font-weight: 300;
+      letter-spacing: 0.3em; text-indent: 0.3em; white-space: nowrap;
+      transition: transform 0.15s;
+    }
+    .page-nav-btn:active .page-nav-btn__pill { transform: scale(0.93); }
+    .nav-up   { top:    calc(var(--safe-top)    + 10px); animation: bob-up   2.2s ease-in-out infinite; }
+    .nav-down { bottom: calc(var(--safe-bottom) + 10px); animation: bob-down 2.2s ease-in-out infinite; }
+    @keyframes bob-up   { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-5px)} }
+    @keyframes bob-down { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY( 5px)} }
+
+    /* ════════════════════════════════════════
+       SHARED: FADE-UP REVEAL
+    ════════════════════════════════════════ */
+    .fade-up { opacity:0; transform:translateY(28px); transition:opacity 0.65s ease,transform 0.65s ease; }
+    .fade-up.visible { opacity:1; transform:translateY(0); }
+    .fade-up:nth-child(1){transition-delay:0.00s} .fade-up:nth-child(2){transition-delay:0.07s}
+    .fade-up:nth-child(3){transition-delay:0.13s} .fade-up:nth-child(4){transition-delay:0.18s}
+    .fade-up:nth-child(5){transition-delay:0.23s} .fade-up:nth-child(6){transition-delay:0.28s}
+    .fade-up:nth-child(7){transition-delay:0.33s} .fade-up:nth-child(8){transition-delay:0.37s}
+
+    /* ════════════════════════════════════════
+       SHARED: DARK-PAGE SECTION HEADERS
+       (invitation + map pages share these)
+    ════════════════════════════════════════ */
+    .section-label {
+      font-size: 9px; font-weight: 100; letter-spacing: 0.6em; text-indent: 0.6em;
+      color: var(--gold); text-transform: uppercase; text-align: center; margin-bottom: 10px;
+    }
+    .section-heading {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: clamp(30px,9vw,42px); text-align: center; color: var(--champagne);
+      letter-spacing: 0.12em;
+      text-shadow: 1px 1px 0 rgba(158,122,63,.55), 2px 2px 0 rgba(158,122,63,.28), 0 4px 18px rgba(0,0,0,.5);
+      margin-bottom: 18px;
+    }
+    .ornament-line {
+      display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 28px;
+    }
+    .ornament-line::before { content:''; width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--gold)); opacity:.4; }
+    .ornament-line::after  { content:''; width:44px; height:1px; background:linear-gradient(90deg,var(--gold),transparent); opacity:.4; }
+    .ornament-line span { font-size:14px; color:var(--gold); opacity:.65; }
+
+    /* ════════════════════════════════════════
+       PAGE — MAIN  (preloader + start overlay)
+    ════════════════════════════════════════ */
+    #page-main {
+      flex-direction: column;
+      background-color: var(--felt-dark);
+      background-image:
+        repeating-linear-gradient(0deg,   rgba(255,255,255,0.014) 0px,rgba(255,255,255,0.014) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(90deg,  rgba(255,255,255,0.014) 0px,rgba(255,255,255,0.014) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(45deg,  rgba(196,133,90,0.030)  0px,rgba(196,133,90,0.030)  1px,transparent 1px,transparent 12px);
+    }
+    #page-main::after {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 28% 38%, rgba(196,133,90,0.18) 0%, transparent 58%),
+        radial-gradient(ellipse at 72% 72%, rgba(139,175,124,0.10) 0%, transparent 52%);
+    }
+
+    /* Loader */
     #loader {
-      position: absolute; inset: 0; z-index: 100;
-      background: var(--felt-dark);
+      position: absolute; inset: 0; z-index: 10;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 20px;
+      align-items: center; justify-content: center; gap: 20px;
     }
-
-    .loader-gif {
-      width: 72px; height: 72px;
-      object-fit: contain;
-    }
-
+    .loader-gif  { width:72px; height:72px; object-fit:contain; }
     .loader-track {
-      width: 160px; height: 3px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px; overflow: hidden;
+      width:160px; height:3px;
+      background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden;
     }
     .loader-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, var(--felt-blush), var(--felt-rust));
-      border-radius: 99px;
-      transition: width 0.2s ease;
+      height:100%; width:0%;
+      background:linear-gradient(90deg,var(--felt-blush),var(--felt-rust));
+      border-radius:99px; transition:width 0.25s ease;
     }
-    .loader-pct {
-      font-size: 12px;
-      color: rgba(245,239,228,0.5);
-      letter-spacing: 0.3em;
-    }
+    .loader-pct { font-size:12px; color:rgba(245,239,228,0.5); letter-spacing:0.3em; }
 
-    /* ════════════════════════════════
-       VIDEO LAYER
-    ════════════════════════════════ */
-    #video-layer {
-      position: absolute; inset: 0; z-index: 1;
-      background: var(--felt-dark);
-      overflow: hidden;
-    }
-
-    #main-video {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      min-width: 100%; min-height: 100%;
-      width: auto; height: auto;
-      object-fit: cover;
-    }
-
-    /* Warm vignette overlay */
-    #video-vignette {
-      position: absolute; inset: 0; z-index: 2;
-      background:
-        radial-gradient(ellipse at center,
-          transparent 40%,
-          rgba(45,27,14,0.55) 100%);
-      pointer-events: none;
-    }
-
-    /* ─── Video Progress Bar ─── */
-    #video-progress {
-      position: absolute;
-      top: var(--safe-top); left: 0; right: 0;
-      height: 2px; z-index: 20;
-      background: rgba(255,255,255,0.12);
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-    #video-progress-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg,
-        rgba(232,196,176,0.9),
-        rgba(196,133,90,0.9));
-      border-radius: 0 1px 1px 0;
-      transition: width 0.1s linear;
-    }
-    #video-progress.visible { opacity: 1; }
-
-    /* ════════════════════════════════
-       START OVERLAY — three-zone layout
-    ════════════════════════════════ */
+    /* Start overlay */
     #start-overlay {
-      position: absolute; inset: 0; z-index: 30;
-      display: flex; flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      /* safe-area top + bottom */
-      padding-top:    calc(var(--safe-top) + 20px);
+      position: absolute; inset: 0; z-index: 9;
+      flex-direction: column; align-items: center; justify-content: space-between;
+      padding-top:    calc(var(--safe-top)    + 20px);
       padding-bottom: calc(var(--safe-bottom) + 36px);
       padding-left: 24px; padding-right: 24px;
+      opacity: 0;
     }
-
-    /* Felt-texture backdrop */
     #start-overlay::before {
-      content: '';
-      position: absolute; inset: 0;
+      content:''; position:absolute; inset:0;
       background:
         radial-gradient(ellipse at 28% 38%, rgba(196,133,90,0.16) 0%, transparent 58%),
         radial-gradient(ellipse at 72% 72%, rgba(139,175,124,0.10) 0%, transparent 52%),
         rgba(28,14,6,0.68);
-      backdrop-filter: blur(3px);
-      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
     }
-
-    /* ── Top spacer (status-bar placeholder) ── */
-    .overlay-top-bar {
-      position: relative; z-index: 1;
-      width: 100%;
-      /* intentionally empty — safe-area padding on parent handles the inset */
-      height: 0;
-    }
-
-    /* ── Center visual zone ── */
     .overlay-center {
-      position: relative; z-index: 1;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 0;
-      flex: 1;
-      justify-content: center;
+      position:relative; z-index:1;
+      display:flex; flex-direction:column; align-items:center;
+      flex:1; justify-content:center;
     }
-
-    /* subtitle — 诚邀您出席 */
     .start-subtitle {
-      font-family: 'Noto Sans SC', sans-serif;
-      font-weight: 100;
-      font-size: clamp(11px, 3.2vw, 13px);
-      color: rgba(232,213,183,0.6);
-      letter-spacing: 0.7em;
-      text-indent: 0.7em; /* optical balance for letter-spacing */
-      margin-bottom: 18px;
+      font-family:'Noto Sans SC',sans-serif; font-weight:100;
+      font-size:clamp(11px,3.2vw,13px);
+      color:rgba(232,213,183,0.6); letter-spacing:0.7em; text-indent:0.7em; margin-bottom:18px;
     }
-
-    /* main title — 黄啸宇 & 康越 */
     .start-main-title {
-      font-family: 'Ma Shan Zheng', 'Dancing Script', cursive;
-      font-size: clamp(34px, 10vw, 48px);
-      color: var(--felt-cream);
-      text-align: center;
-      line-height: 1.2;
-      /* extreme letter-spacing for cinematic feel */
-      letter-spacing: 0.18em;
-      /* multi-layer 3D shadow */
+      font-family:'Ma Shan Zheng','Dancing Script',cursive;
+      font-size:clamp(34px,10vw,48px); color:var(--felt-cream);
+      text-align:center; line-height:1.2; letter-spacing:0.18em;
       text-shadow:
-        1px 1px 0   rgba(122, 78, 45, 0.70),
-        2px 2px 0   rgba(122, 78, 45, 0.45),
-        3px 3px 0   rgba(122, 78, 45, 0.22),
-        0   6px 18px rgba(45,  27, 14, 0.55);
+        1px 1px 0 rgba(122,78,45,.70), 2px 2px 0 rgba(122,78,45,.45),
+        3px 3px 0 rgba(122,78,45,.22), 0 6px 18px rgba(45,27,14,.55);
     }
-
-    /* felt heart */
     .start-heart {
-      position: relative; z-index: 1;
-      margin: 16px 0 14px;
-      line-height: 1;
-      font-size: 20px;
-      /* hand-crafted SVG heart, felt-texture color */
-      color: var(--felt-rust);
-      filter: drop-shadow(0 1px 3px rgba(122,78,45,0.5));
-      animation: heart-pulse 2.4s ease-in-out infinite;
+      position:relative; z-index:1; margin:16px 0 14px; font-size:20px;
+      color:var(--felt-rust); filter:drop-shadow(0 1px 3px rgba(122,78,45,.5));
+      animation:heart-pulse 2.4s ease-in-out infinite;
     }
-    @keyframes heart-pulse {
-      0%, 100% { transform: scale(1);    }
-      45%       { transform: scale(1.18); }
-      55%       { transform: scale(1.14); }
-    }
-
-    /* date — 2026.05.01 */
+    @keyframes heart-pulse { 0%,100%{transform:scale(1)} 45%{transform:scale(1.18)} 55%{transform:scale(1.14)} }
     .start-date {
-      font-family: 'Noto Sans SC', sans-serif;
-      font-weight: 300;
-      font-size: clamp(12px, 3.5vw, 14px);
-      color: rgba(232,196,176,0.65);
-      letter-spacing: 0.55em;
-      text-indent: 0.55em;
+      font-family:'Noto Sans SC',sans-serif; font-weight:300;
+      font-size:clamp(12px,3.5vw,14px); color:rgba(232,196,176,.65);
+      letter-spacing:0.55em; text-indent:0.55em;
     }
-
-    /* ── Bottom CTA zone ── */
     .overlay-bottom {
-      position: relative; z-index: 1;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 16px;
-      width: 100%;
+      position:relative; z-index:1;
+      display:flex; flex-direction:column; align-items:center; gap:16px; width:100%;
     }
-
-    /* Felt card button with stitch border */
     #btn-start {
-      position: relative;
-      width: clamp(180px, 60vw, 240px);
-      padding: 16px 0;
-      /* wooden brown felt background */
-      background: linear-gradient(160deg, #8B5E32 0%, #6B4220 100%);
-      border: none; outline: none;
-      border-radius: 14px;
-      cursor: pointer;
-      /* felt depth */
+      position:relative; width:clamp(180px,60vw,240px); padding:16px 0;
+      background:linear-gradient(160deg,#8B5E32 0%,#6B4220 100%);
+      border:none; outline:none; border-radius:14px; cursor:pointer; overflow:hidden;
       box-shadow:
-        0 1px 0   rgba(255,255,255,0.12) inset,
-        0 -2px 0  rgba(0,0,0,0.25) inset,
-        0 8px 28px rgba(45,27,14,0.55),
-        0 2px 6px  rgba(45,27,14,0.35);
-      animation: btn-idle 4s ease-in-out infinite;
-      /* clip so inner stitch stays inside */
-      overflow: hidden;
+        0 1px 0 rgba(255,255,255,0.12) inset, 0 -2px 0 rgba(0,0,0,0.25) inset,
+        0 8px 28px rgba(45,27,14,.55), 0 2px 6px rgba(45,27,14,.35);
+      animation:btn-idle 4s ease-in-out infinite;
     }
-
-    /* Stitch border via pseudo-element */
     #btn-start::before {
-      content: '';
-      position: absolute;
-      inset: 6px;
-      border-radius: 9px;
-      border: 1.5px dashed rgba(255,255,255,0.28);
-      pointer-events: none;
+      content:''; position:absolute; inset:6px; border-radius:9px;
+      border:1.5px dashed rgba(255,255,255,.28); pointer-events:none;
     }
-
-    /* Subtle top sheen (felt texture highlight) */
     #btn-start::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 14px;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.10) 0%,
-        transparent 55%);
-      pointer-events: none;
+      content:''; position:absolute; inset:0; border-radius:14px;
+      background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,transparent 55%); pointer-events:none;
     }
-
-    /* Button text wrapper */
     #btn-text {
-      position: relative; z-index: 1;
-      display: block;
-      font-family: 'Noto Sans SC', sans-serif;
-      font-weight: 700;
-      font-size: clamp(15px, 4.5vw, 17px);
-      /* dark navy blue — high contrast on brown felt */
-      color: #1B2A4A;
-      letter-spacing: 0.35em;
-      text-indent: 0.35em;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.18);
-      /* typewriter cursor placeholder */
-      white-space: nowrap;
+      position:relative; z-index:1; display:block;
+      font-family:'Noto Sans SC',sans-serif; font-weight:700;
+      font-size:clamp(15px,4.5vw,17px); color:#1B2A4A;
+      letter-spacing:0.35em; text-indent:0.35em;
+      text-shadow:0 1px 0 rgba(255,255,255,.18); white-space:nowrap;
     }
-
-
-
-
-    @keyframes cursor-blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0; }
-    }
-
     @keyframes btn-idle {
-      0%, 100% { transform: rotate(-0.4deg) scale(1);    }
-      40%       { transform: rotate( 0.5deg) scale(1.015); }
-      75%       { transform: rotate(-0.2deg) scale(0.995); }
+      0%,100%{transform:rotate(-0.4deg) scale(1)}
+      40%{transform:rotate(0.5deg) scale(1.015)}
+      75%{transform:rotate(-0.2deg) scale(0.995)}
     }
-    #btn-start:active {
-      animation: none;
-      transform: scale(0.94) rotate(0deg);
-      transition: transform 0.08s;
-    }
-
-    /* footnote tips — dark grey from the felt-doll lady */
+    #btn-start:active { animation:none; transform:scale(0.94); transition:transform .08s; }
     .start-footnote {
-      font-family: 'Noto Sans SC', sans-serif;
-      font-weight: 300;
-      font-size: 11px;
-      color: #5C5047;   /* warm dark grey, sampled from felt figure */
-      letter-spacing: 0.22em;
+      font-family:'Noto Sans SC',sans-serif; font-weight:300;
+      font-size:11px; color:#5C5047; letter-spacing:0.22em;
     }
 
-    /* ════════════════════════════════
-       SWIPE HINT (video end)
-    ════════════════════════════════ */
+    /* ════════════════════════════════════════
+       PAGE — VIDEO
+    ════════════════════════════════════════ */
+    #page-video { background: var(--felt-dark); }
+
+    #video-layer { position:absolute; inset:0; z-index:1; background:var(--felt-dark); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    #main-video {
+      display:block;
+      width:100%; height:auto;
+      max-height:100%;
+      object-fit:contain;
+    }
+    #video-vignette {
+      position:absolute; inset:0; z-index:2;
+      background:radial-gradient(ellipse at center,transparent 40%,rgba(45,27,14,.55) 100%);
+      pointer-events:none;
+    }
+    #video-progress {
+      position:absolute; top:var(--safe-top); left:0; right:0;
+      height:2px; z-index:20; background:rgba(255,255,255,.12);
+      opacity:0; transition:opacity .4s;
+    }
+    #video-progress.visible { opacity:1; }
+    #video-progress-fill {
+      height:100%; width:0%;
+      background:linear-gradient(90deg,rgba(232,196,176,.9),rgba(196,133,90,.9));
+      border-radius:0 1px 1px 0; transition:width .1s linear;
+    }
     #swipe-hint {
-      position: absolute; inset: 0; z-index: 25;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 14px;
-      pointer-events: none;
-      opacity: 0;
+      position:absolute; inset:0; z-index:25;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+      pointer-events:none; opacity:0;
     }
-
     .hint-ring {
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      background: rgba(245,239,228,0.12);
-      border: 1.5px solid rgba(245,239,228,0.35);
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(4px);
+      width:60px; height:60px; border-radius:50%;
+      background:rgba(245,239,228,.12); border:1.5px solid rgba(245,239,228,.35);
+      display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+    }
+    .hint-text { font-size:13px; color:rgba(245,239,228,.75); letter-spacing:.3em; text-align:center; }
+
+    /* ════════════════════════════════════════
+       PAGE — CAROUSEL
+    ════════════════════════════════════════ */
+    #page-carousel {
+      background-color: var(--felt-cream);
+      background-image:
+        repeating-linear-gradient(0deg,   rgba(122,78,45,.030) 0px,rgba(122,78,45,.030) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(90deg,  rgba(122,78,45,.030) 0px,rgba(122,78,45,.030) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(45deg,  rgba(196,133,90,.040) 0px,rgba(196,133,90,.040) 1px,transparent 1px,transparent 12px),
+        linear-gradient(170deg,#F0E6D6 0%,#F5EFE4 45%,#EDE0CB 100%);
+      font-family: 'Noto Sans SC','STSong',sans-serif;
+    }
+    #page-carousel::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 18% 22%,rgba(232,196,176,.22) 0%,transparent 52%),
+        radial-gradient(ellipse at 82% 80%,rgba(201,169,110,.12) 0%,transparent 48%);
+    }
+    #carousel-inner {
+      min-height: 100svh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding-top:    calc(var(--safe-top)    + 0px);
+      padding-bottom: calc(var(--safe-bottom) + 32px);
+      position: relative;
+    }
+    .carousel-header {
+      display:flex; align-items:flex-end; justify-content:space-between; padding:40px 24px 0; gap:16px;
+    }
+    .carousel-eyebrow {
+      font-size:10px; font-weight:300; letter-spacing:.55em; text-indent:.55em;
+      color:var(--felt-rust); text-transform:uppercase; margin-bottom:6px;
+    }
+    .carousel-title {
+      font-family:'Ma Shan Zheng',cursive; font-size:clamp(26px,8vw,36px);
+      color:var(--felt-dark); line-height:1.15; letter-spacing:.06em;
+      text-shadow:1px 1px 0 rgba(122,78,45,.15);
+    }
+    .carousel-nav { display:flex; gap:8px; flex-shrink:0; padding-bottom:4px; }
+    .nav-btn {
+      width:40px; height:40px; border-radius:12px;
+      border:none; outline:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(160deg,#8B5E32 0%,#6B4220 100%);
+      box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 4px 12px rgba(45,27,14,.28);
+      color:var(--felt-cream); position:relative; transition:transform .15s,opacity .2s;
+    }
+    .nav-btn::before {
+      content:''; position:absolute; inset:3px; border-radius:9px;
+      border:1px dashed rgba(255,255,255,.22); pointer-events:none;
+    }
+    .nav-btn:active { transform:scale(0.9); }
+    .nav-btn.swiper-button-disabled { opacity:.35; cursor:default; pointer-events:none; }
+    .carousel-swiper-outer { overflow:hidden; margin-top:20px; padding-left:24px; }
+    .carousel-swiper { width:100%; padding:20px 0 28px !important; overflow:visible !important; }
+    .swiper-slide { width:82%; max-width:320px; }
+    .card {
+      background:#fff; border-radius:20px; overflow:hidden;
+      box-shadow:0 2px 0 rgba(255,255,255,.8) inset,0 8px 28px rgba(45,27,14,.10),0 2px 6px rgba(45,27,14,.06);
+      opacity:0; transform:translateY(24px);
+    }
+    .card__image-wrap {
+      width:100%; aspect-ratio:1/1; overflow:hidden; position:relative;
+      background:linear-gradient(135deg,var(--felt-warm) 0%,var(--felt-blush) 100%);
+    }
+    .card__image-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s ease; }
+    .swiper-slide-active .card__image-wrap img { transform:scale(1.03); }
+    .card__img-placeholder {
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:6px;
+    }
+    .card__img-placeholder .ph-icon { font-size:32px; opacity:.45; }
+    .card__img-placeholder .ph-label { font-size:11px; font-weight:300; color:rgba(122,78,45,.55); letter-spacing:.2em; }
+    .card__image-wrap::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:40%;
+      background:linear-gradient(transparent,rgba(45,27,14,.12)); pointer-events:none;
+    }
+    .card__body { padding:20px 22px 26px; }
+    .card__eyebrow { font-size:10px; font-weight:300; letter-spacing:.45em; text-indent:.45em; color:var(--felt-rust); text-transform:uppercase; margin-bottom:6px; }
+    .card__title { font-family:'Ma Shan Zheng',cursive; font-size:clamp(18px,5.5vw,22px); color:var(--felt-dark); letter-spacing:.05em; line-height:1.25; margin-bottom:10px; text-shadow:1px 1px 0 rgba(122,78,45,.1); }
+    .card__desc { font-size:clamp(12px,3.5vw,13px); font-weight:300; color:var(--felt-grey); line-height:1.8; letter-spacing:.04em; }
+    .card__stitch { margin-top:14px; height:1px; opacity:.25; border-radius:99px; background:repeating-linear-gradient(90deg,var(--felt-rust) 0px,var(--felt-rust) 5px,transparent 5px,transparent 9px); }
+    .swiper-pagination { bottom:0 !important; }
+    .swiper-pagination-bullet { width:5px; height:5px; background:var(--felt-brown); opacity:.2; transition:opacity .25s,width .25s; border-radius:99px; }
+    .swiper-pagination-bullet-active { opacity:.75; width:16px; }
+    .carousel-footer { text-align:center; padding:8px 24px 0; font-size:11px; font-weight:300; color:rgba(122,78,45,.35); letter-spacing:.3em; }
+
+    /* ════════════════════════════════════════
+       PAGE — INVITATION
+    ════════════════════════════════════════ */
+    #page-invitation {
+      font-family: 'Noto Sans SC',sans-serif;
+      background-color: var(--bg-mid);
+      background-image:
+        repeating-linear-gradient(0deg,  rgba(255,255,255,.018) 0px,rgba(255,255,255,.018) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0px,rgba(255,255,255,.018) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(45deg, rgba(196,133,90,.025)  0px,rgba(196,133,90,.025)  1px,transparent 1px,transparent 12px),
+        linear-gradient(170deg,var(--bg-deep) 0%,var(--bg-warm) 55%,var(--bg-deep) 100%);
+    }
+    #page-invitation::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 20% 25%,rgba(196,133,90,.13) 0%,transparent 50%),
+        radial-gradient(ellipse at 80% 78%,rgba(201,169,110,.09) 0%,transparent 48%);
+    }
+    #invitation-inner {
+      position: relative;
+      min-height: 100svh;
+      padding-top:    calc(var(--safe-top)    + 64px);
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+      padding-left: 20px; padding-right: 20px;
+    }
+    .detail-card {
+      display:flex; gap:14px; align-items:flex-start;
+      background:linear-gradient(145deg,rgba(74,38,18,.75) 0%,rgba(55,25,10,.85) 100%);
+      border-radius:18px 5px 20px 7px / 7px 20px 5px 18px;
+      border:2px dashed rgba(245,230,202,.28);
+      padding:18px 16px; margin-bottom:14px; position:relative;
+      filter:drop-shadow(2px 4px 6px rgba(0,0,0,.38)); transition:filter .2s;
+    }
+    .detail-card:active { filter:drop-shadow(1px 2px 3px rgba(0,0,0,.28)); }
+    .detail-card::before {
+      content:''; position:absolute; top:-1px; left:14px; right:14px; height:1px;
+      background:linear-gradient(90deg,transparent,rgba(245,230,202,.22),transparent);
+    }
+    .detail-icon {
+      width:44px; height:44px; flex-shrink:0;
+      background:rgba(201,169,110,.12); border:1px dashed rgba(201,169,110,.25);
+      border-radius:10px 3px 12px 3px / 3px 12px 3px 10px;
+      display:flex; align-items:center; justify-content:center; font-size:20px;
+    }
+    .detail-content { flex:1; min-width:0; }
+    .detail-label { font-size:9px; font-weight:100; letter-spacing:.45em; text-indent:.45em; color:var(--champagne); text-transform:uppercase; margin-bottom:5px; opacity:.75; }
+    .detail-value { font-size:clamp(14px,4.2vw,16px); font-weight:600; color:var(--ivory); line-height:1.45; margin-bottom:3px; letter-spacing:.04em; }
+    .detail-sub   { font-size:clamp(11px,3.2vw,12px); font-weight:300; color:rgba(245,230,202,.45); letter-spacing:.05em; line-height:1.6; }
+    .copy-block { margin-top:28px; display:flex; flex-direction:column; align-items:center; }
+    #btn-copy-info {
+      position:relative; display:inline-flex; align-items:center; gap:9px;
+      padding:14px 32px; cursor:pointer; border:none;
+      background:linear-gradient(145deg,#6B3E1E 0%,#4E2A0E 100%);
+      border-radius:10px 3px 12px 5px / 5px 12px 3px 10px;
+      border:2px dashed rgba(245,230,202,.38);
+      font-family:inherit; font-size:clamp(13px,4vw,14px); font-weight:600;
+      letter-spacing:.3em; color:var(--champagne); filter:drop-shadow(2px 3px 6px rgba(0,0,0,.4));
+    }
+    #btn-copy-info::before { content:'✦'; position:absolute; top:5px; left:8px; font-size:6px; color:rgba(245,230,202,.35); }
+    #btn-copy-info::after  { content:'✦'; position:absolute; bottom:5px; right:8px; font-size:6px; color:rgba(245,230,202,.35); }
+    #btn-copy-info.copied { background:linear-gradient(145deg,#2E5C2A 0%,#1E3D1B 100%); border-color:rgba(160,207,155,.4); color:#A8CFA0; }
+    .copy-hint { margin-top:10px; font-size:10px; font-weight:100; color:rgba(245,230,202,.28); letter-spacing:.25em; }
+    #toast {
+      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      z-index:200; padding:12px 24px;
+      background:rgba(20,10,4,.88); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      border:1px solid rgba(201,169,110,.25); border-radius:99px;
+      font-size:13px; font-weight:300; color:var(--champagne); letter-spacing:.15em;
+      white-space:nowrap; pointer-events:none; opacity:0;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
     }
 
-    .hint-text {
-      font-size: 13px;
-      color: rgba(245,239,228,0.75);
-      letter-spacing: 0.3em;
-      text-align: center;
+    /* ════════════════════════════════════════
+       PAGE — MAP
+    ════════════════════════════════════════ */
+    #page-map {
+      font-family: 'Noto Sans SC',sans-serif;
+      background-color: var(--bg-mid);
+      background-image:
+        repeating-linear-gradient(0deg,  rgba(255,255,255,.018) 0px,rgba(255,255,255,.018) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0px,rgba(255,255,255,.018) 1px,transparent 1px,transparent 5px),
+        repeating-linear-gradient(45deg, rgba(196,133,90,.025)  0px,rgba(196,133,90,.025)  1px,transparent 1px,transparent 12px),
+        linear-gradient(170deg,var(--bg-deep) 0%,var(--bg-warm) 55%,var(--bg-deep) 100%);
     }
+    #page-map::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 25% 30%,rgba(196,133,90,.12) 0%,transparent 52%),
+        radial-gradient(ellipse at 75% 75%,rgba(201,169,110,.08) 0%,transparent 48%);
+    }
+    #map-inner {
+      position: relative;
+      min-height: 100svh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding-top:    calc(var(--safe-top)    + 64px);
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+      padding-left: 20px; padding-right: 20px;
+    }
+    .venue-strip {
+      display:flex; align-items:center; gap:12px;
+      background:linear-gradient(145deg,rgba(74,38,18,.75),rgba(55,25,10,.85));
+      border:2px dashed rgba(245,230,202,.25);
+      border-radius:14px 4px 16px 4px / 4px 16px 4px 14px;
+      padding:14px 16px; margin-bottom:16px;
+      filter:drop-shadow(2px 4px 6px rgba(0,0,0,.38)); position:relative;
+    }
+    .venue-strip::before { content:''; position:absolute; top:-1px; left:14px; right:14px; height:1px; background:linear-gradient(90deg,transparent,rgba(245,230,202,.2),transparent); }
+    .venue-strip__icon { font-size:22px; flex-shrink:0; }
+    .venue-strip__name { font-size:clamp(14px,4.2vw,16px); font-weight:600; color:var(--ivory); letter-spacing:.04em; margin-bottom:2px; }
+    .venue-strip__addr { font-size:12px; font-weight:300; color:rgba(245,230,202,.45); letter-spacing:.05em; }
+    .map-preview {
+      width:100%; border-radius:16px 4px 18px 4px / 4px 18px 4px 16px;
+      overflow:hidden; border:2px dashed rgba(245,230,202,.22);
+      box-shadow:0 8px 32px rgba(0,0,0,.45); margin-bottom:14px;
+      filter:drop-shadow(2px 4px 8px rgba(0,0,0,.4)); position:relative;
+    }
+    .map-preview img { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
+    .map-placeholder {
+      aspect-ratio:4/3; background:linear-gradient(145deg,#221508 0%,#160E05 100%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:10px; position:relative;
+    }
+    .map-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(201,169,110,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(201,169,110,.07) 1px,transparent 1px); background-size:26px 26px; }
+    .map-road-h { position:absolute; left:0; right:0; height:3px; background:rgba(201,169,110,.14); }
+    .map-road-v { position:absolute; top:0; bottom:0; width:3px; background:rgba(201,169,110,.14); }
+    .map-pin-wrap { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .map-pin-emoji { font-size:32px; filter:drop-shadow(0 3px 8px rgba(0,0,0,.6)); animation:pin-bounce 2s ease-in-out infinite; }
+    @keyframes pin-bounce { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-6px)} 65%{transform:translateY(-3px)} }
+    .map-pin-label { font-size:clamp(13px,4vw,15px); font-weight:600; color:var(--champagne); letter-spacing:.06em; text-shadow:0 1px 4px rgba(0,0,0,.6); }
+    .map-pin-addr  { font-size:11px; font-weight:300; color:rgba(245,230,202,.5); letter-spacing:.04em; }
+    .map-preview::after { content:''; position:absolute; bottom:0; left:0; right:0; height:40%; background:linear-gradient(transparent,rgba(22,14,5,.55)); pointer-events:none; }
+    .map-btns { display:flex; flex-direction:column; gap:10px; }
+    .btn-map-primary {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:100%; padding:15px;
+      background:linear-gradient(135deg,var(--gold) 0%,var(--gold-d) 100%);
+      color:var(--bg-deep); border:none;
+      border-radius:14px 4px 16px 4px / 4px 16px 4px 14px;
+      font-family:inherit; font-size:clamp(13px,4vw,15px); font-weight:600; letter-spacing:.22em;
+      cursor:pointer;
+      box-shadow:0 4px 20px rgba(158,122,63,.42),0 1px 0 rgba(255,255,255,.22) inset;
+      position:relative; overflow:hidden; transition:transform .15s;
+    }
+    .btn-map-primary::before { content:''; position:absolute; top:0; left:0; right:0; height:50%; background:linear-gradient(rgba(255,255,255,.10),transparent); pointer-events:none; }
+    .btn-map-primary:active { transform:scale(0.97); }
+    .btn-map-secondary {
+      display:flex; align-items:center; justify-content:center; gap:7px;
+      width:100%; padding:13px;
+      background:rgba(201,169,110,.08); border:2px dashed rgba(201,169,110,.3);
+      border-radius:12px 4px 14px 4px / 4px 14px 4px 12px;
+      font-family:inherit; font-size:clamp(12px,3.5vw,13px); font-weight:300;
+      letter-spacing:.2em; color:var(--gold-l); cursor:pointer;
+      transition:background .15s,transform .15s;
+    }
+    .btn-map-secondary:active { transform:scale(0.97); background:rgba(201,169,110,.14); }
+    .map-support { text-align:center; font-size:10px; font-weight:100; color:rgba(201,169,110,.3); letter-spacing:.3em; margin-top:10px; }
 
-    /* ════════════════════════════════
-       NEXT PAGE PLACEHOLDER
-    ════════════════════════════════ */
-    #next-page {
-      position: absolute; inset: 0; z-index: 0;
-      background: var(--felt-cream);
-      transform: translateY(100%);
-      display: flex; align-items: center; justify-content: center;
+    /* ════════════════════════════════════════
+       PAGE — ENDING
+    ════════════════════════════════════════ */
+    #page-ending { background:#000; font-family:'Noto Sans SC',sans-serif; }
+    #ending-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+    #loop-counter {
+      position:fixed; bottom:calc(var(--safe-bottom)+18px); right:20px; z-index:10;
+      font-size:10px; font-weight:300; letter-spacing:.2em; color:rgba(255,255,255,.22);
+      font-variant-numeric:tabular-nums; pointer-events:none;
     }
-    .next-page-label {
-      font-size: 14px;
-      color: rgba(122,78,45,0.4);
-      letter-spacing: 0.4em;
+    #easter-egg {
+      position:absolute; inset:0; z-index:50;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:32px 28px;
+      padding-top:calc(var(--safe-top)+40px); padding-bottom:calc(var(--safe-bottom)+40px);
+      background:rgba(10,5,2,.82); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+      opacity:0; pointer-events:none;
     }
-
-    /* ════════════════════════════════
-       SAFE-AREA PADDING HELPERS
-    ════════════════════════════════ */
-    .safe-top    { padding-top:    var(--safe-top);    }
-    .safe-bottom { padding-bottom: var(--safe-bottom); }
+    #easter-egg.visible { pointer-events:auto; }
+    .confetti-dot { position:absolute; width:6px; height:6px; border-radius:50%; pointer-events:none; }
+    .egg-trophy { font-size:52px; margin-bottom:20px; filter:drop-shadow(0 0 16px rgba(201,169,110,.6)); }
+    .egg-congrats { font-family:'Ma Shan Zheng',cursive; font-size:clamp(36px,11vw,50px); color:var(--gold); letter-spacing:.12em; text-shadow:1px 1px 0 rgba(158,122,63,.6),2px 2px 0 rgba(158,122,63,.3),0 4px 20px rgba(201,169,110,.4); margin-bottom:10px; }
+    .egg-divider { display:flex; align-items:center; gap:10px; margin:14px 0 20px; }
+    .egg-divider::before,.egg-divider::after { content:''; width:40px; height:1px; opacity:.4; }
+    .egg-divider::before { background:linear-gradient(90deg,transparent,var(--gold)); }
+    .egg-divider::after  { background:linear-gradient(90deg,var(--gold),transparent); }
+    .egg-divider span { font-size:14px; color:var(--gold); opacity:.65; }
+    .egg-message { font-size:clamp(13px,4vw,15px); font-weight:300; color:rgba(232,213,163,.85); text-align:center; line-height:2; letter-spacing:.06em; margin-bottom:28px; }
+    .egg-message strong { color:var(--gold-l); font-weight:400; }
+    .egg-email-card { width:100%; background:rgba(201,169,110,.08); border:1px dashed rgba(201,169,110,.35); border-radius:16px; padding:18px 20px; margin-bottom:20px; text-align:center; }
+    .egg-email-label { font-size:9px; font-weight:300; letter-spacing:.5em; text-indent:.5em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; }
+    .egg-email-addr { font-size:clamp(13px,3.8vw,15px); font-weight:400; color:var(--gold-l); letter-spacing:.05em; word-break:break-all; margin-bottom:10px; }
+    #btn-copy-egg {
+      display:inline-flex; align-items:center; gap:5px; padding:7px 18px;
+      border-radius:99px; border:1px solid rgba(201,169,110,.35); background:rgba(201,169,110,.12);
+      color:var(--gold-l); font-family:inherit; font-size:11px; font-weight:300;
+      letter-spacing:.25em; cursor:pointer; transition:background .2s,transform .12s;
+    }
+    #btn-copy-egg:active { transform:scale(0.93); }
+    #btn-copy-egg.copied { background:rgba(139,175,124,.2); border-color:rgba(139,175,124,.4); color:#A8CFA0; }
+    #btn-mailto {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:100%; padding:15px;
+      background:linear-gradient(135deg,var(--gold) 0%,#9E7A3F 100%);
+      color:var(--bg-deep); border:none; border-radius:14px;
+      font-family:inherit; font-size:clamp(13px,4vw,15px); font-weight:400; letter-spacing:.2em;
+      cursor:pointer; text-decoration:none;
+      box-shadow:0 4px 20px rgba(158,122,63,.4),0 1px 0 rgba(255,255,255,.22) inset;
+      position:relative; overflow:hidden; transition:transform .12s;
+    }
+    #btn-mailto::before { content:''; position:absolute; top:0; left:0; right:0; height:50%; background:linear-gradient(rgba(255,255,255,.12),transparent); pointer-events:none; }
+    #btn-mailto:active { transform:scale(0.97); }
+    .egg-footnote { margin-top:16px; font-size:10px; font-weight:300; color:rgba(201,169,110,.3); text-align:center; letter-spacing:.2em; line-height:1.8; }
   </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- ══ NEXT PAGE PLACEHOLDER ══ -->
-  <div id="next-page">
-    <p class="next-page-label">· 邀请函内容页 ·</p>
-  </div>
+  <!-- ══ GLOBAL BGM — never destroyed ══ -->
+  <audio id="bgm" loop preload="auto">
+    <source src="./assets/bgm.wav" type="audio/wav" />
+    <source src="./assets/bgm.wav" type="audio/wave" />
+  </audio>
 
-  <!-- ══ VIDEO LAYER ══ -->
-  <div id="video-layer">
-    <!--
-      ★ 替换 src 为真实视频地址
-      playsinline / webkit-playsinline 是微信/iOS 内联播放必需属性
-    -->
-    <video
-      id="main-video"
-      src="./assets/header_banner_video_ver2.mp4"
-      playsinline
-      webkit-playsinline
-      x5-video-player-type="h5"
-      x5-video-player-fullscreen="false"
-      x5-video-orientation="portraint"
-      preload="auto"
-      muted
-    ></video>
+  <!-- ══ MUSIC TOGGLE — top-left, all pages ══ -->
+  <button id="music-toggle" aria-label="音乐开关" onclick="toggleBgm()">♪</button>
 
-    <div id="video-vignette"></div>
-    <div id="video-progress"><div id="video-progress-fill"></div></div>
+  <!-- ════════════════════════════════════════
+       PAGE — MAIN  (preloader + 开启邀请)
+  ════════════════════════════════════════ -->
+  <section id="page-main" class="page" style="display:flex;flex-direction:column;">
 
-    <!-- ══ SWIPE HINT ══ -->
-    <div id="swipe-hint">
-      <div class="hint-ring">
-        <svg id="hint-svg" width="28" height="28" viewBox="0 0 28 28" fill="none"
-             xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 17.5 L14 10.5 L21 17.5"
-                stroke="rgba(245,239,228,0.9)" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M7 22 L14 15 L21 22"
-                stroke="rgba(245,239,228,0.45)" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+    <!-- Loader -->
+    <div id="loader">
+      <img class="loader-gif" id="loader-gif" src="./assets/placeholder.gif" alt="" />
+      <div class="loader-track"><div class="loader-fill" id="loader-fill"></div></div>
+      <p class="loader-pct" id="loader-pct">0%</p>
+    </div>
+
+    <!-- Start overlay (hidden until load complete) -->
+    <div id="start-overlay" style="display:none;">
+      <div aria-hidden="true" style="height:0;position:relative;z-index:1;"></div>
+      <div class="overlay-center">
+        <p class="start-subtitle">诚邀您出席</p>
+        <h3 class="start-main-title">黄啸宇 &amp; 康越</h3>
+        <div class="start-heart" aria-hidden="true">♥</div>
+        <p class="start-date">2026.05.01</p>
       </div>
-      <p class="hint-text">滑动查看详情</p>
-    </div>
-  </div>
-
-  <!-- ══ START OVERLAY ══ -->
-  <div id="start-overlay">
-
-    <!-- Status-bar safe-area anchor (empty, padding handled on parent) -->
-    <div class="overlay-top-bar" aria-hidden="true"></div>
-
-    <!-- ── Center Visual ── -->
-    <div class="overlay-center">
-      <p class="start-subtitle">诚邀您出席</p>
-
-      <h3 class="start-main-title">黄啸宇 &amp; 康越</h3>
-
-      <!-- Felt heart SVG — warmer than emoji, scales cleanly -->
-     
-
-      <p class="start-date" style="margin-top: 18px;">2026.05.01</p>
+      <div class="overlay-bottom">
+        <button id="btn-start" aria-label="开启邀请"><span id="btn-text"></span></button>
+        <p class="start-footnote">请在能播放声音的地方打开</p>
+      </div>
     </div>
 
-    <!-- ── Bottom CTA ── -->
-    <div class="overlay-bottom">
-      <button id="btn-start" aria-label="开启邀请">
-        <span id="btn-text"></span>
-      </button>
-      <p class="start-footnote">请在能播放声音的地方打开</p>
-    </div>
+  </section>
 
-  </div>
-
-  <!-- ══ LOADER ══ -->
-  <div id="loader">
-    <!-- ★ 替换 src 为真实 GIF 路径，如 ./assets/loader.gif -->
-    <img class="loader-gif" id="loader-gif"
-         src="./assets/placeholder.gif"
-         alt="" />
-    <div class="loader-track">
-      <div class="loader-fill" id="loader-fill"></div>
+  <!-- ════════════════════════════════════════
+       PAGE — VIDEO INTRO
+  ════════════════════════════════════════ -->
+  <section id="page-video" class="page">
+    <div id="video-layer">
+      <video id="main-video"
+        src="./assets/header_banner_video_ver2.mp4"
+        playsinline webkit-playsinline
+        x5-video-player-type="h5" x5-video-player-fullscreen="false"
+        preload="auto" muted></video>
+      <div id="video-vignette"></div>
+      <div id="video-progress"><div id="video-progress-fill"></div></div>
+      <div id="swipe-hint">
+        <div class="hint-ring">
+          <svg id="hint-svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M7 17.5L14 10.5L21 17.5" stroke="rgba(245,239,228,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 22L14 15L21 22"         stroke="rgba(245,239,228,0.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="hint-text">滑动查看详情</p>
+      </div>
     </div>
-    <p class="loader-pct" id="loader-pct">0%</p>
-  </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       PAGE — CAROUSEL  (our story)
+  ════════════════════════════════════════ -->
+  <section id="page-carousel" class="page page--scroll">
+    <button class="page-nav-btn nav-up" onclick="navigateTo('video')">
+      <div class="page-nav-btn__pill">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </div>
+    </button>
+    <button class="page-nav-btn nav-down" onclick="navigateTo('invitation')">
+      <div class="page-nav-btn__pill">
+        继续
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </button>
+
+    <div id="carousel-inner">
+      <header class="carousel-header">
+        <div>
+          <p class="carousel-eyebrow">Our Story</p>
+          <h2 class="carousel-title">我们的故事</h2>
+        </div>
+        <nav class="carousel-nav">
+          <button type="button" id="nav-prev" class="nav-btn" aria-label="上一张">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M17.5 10C17.5 9.54 17.13 9.17 16.67 9.17H5.69L8.09 6.76C8.41 6.44 8.41 5.91 8.09 5.59C7.76 5.26 7.24 5.26 6.91 5.59L3.21 9.29C2.82 9.68 2.82 10.32 3.21 10.71L6.91 14.41C7.24 14.74 7.76 14.74 8.09 14.41C8.41 14.09 8.41 13.56 8.09 13.24L5.69 10.83H16.67C17.13 10.83 17.5 10.46 17.5 10Z" fill="currentColor"/></svg>
+          </button>
+          <button type="button" id="nav-next" class="nav-btn" aria-label="下一张">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M2.5 10C2.5 10.46 2.87 10.83 3.33 10.83H14.31L11.91 13.24C11.59 13.56 11.59 14.09 11.91 14.41C12.24 14.74 12.76 14.74 13.09 14.41L16.79 10.71C17.18 10.32 17.18 9.68 16.79 9.29L13.09 5.59C12.76 5.26 12.24 5.26 11.91 5.59C11.59 5.91 11.59 6.44 11.91 6.76L14.31 9.17H3.33C2.87 9.17 2.5 9.54 2.5 10Z" fill="currentColor"/></svg>
+          </button>
+        </nav>
+      </header>
+
+      <div class="carousel-swiper-outer">
+        <div class="swiper carousel-swiper" id="story-swiper">
+          <div class="swiper-wrapper">
+            <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="相识" onerror="this.style.display='none'" />
+                <div class="card__img-placeholder"><span class="ph-icon">🌸</span><span class="ph-label">照片占位 · 相识</span></div>
+              </div>
+              <div class="card__body">
+                <p class="card__eyebrow">2020 · Spring</p>
+                <h3 class="card__title">初见，是命中注定</h3>
+                <p class="card__desc">那年春天，在同一座城市的某个角落，我们相遇了。从此，彼此的故事开始了新的篇章。</p>
+                <div class="card__stitch"></div>
+              </div>
+            </div></article>
+            <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="相知" onerror="this.style.display='none'" />
+                <div class="card__img-placeholder"><span class="ph-icon">☕</span><span class="ph-label">照片占位 · 相知</span></div>
+              </div>
+              <div class="card__body">
+                <p class="card__eyebrow">2021 · Summer</p>
+                <h3 class="card__title">慢慢地，我了解了你</h3>
+                <p class="card__desc">一起走过的每个普通的下午，变成了我最珍贵的记忆。你的笑声，是我最喜欢听到的声音。</p>
+                <div class="card__stitch"></div>
+              </div>
+            </div></article>
+            <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="同行" onerror="this.style.display='none'" />
+                <div class="card__img-placeholder"><span class="ph-icon">✈️</span><span class="ph-label">照片占位 · 同行</span></div>
+              </div>
+              <div class="card__body">
+                <p class="card__eyebrow">2022 · Autumn</p>
+                <h3 class="card__title">与你同行，哪里都是远方</h3>
+                <p class="card__desc">我们一起旅行，一起迷路，一起在陌生的城市找到属于我们的角落。</p>
+                <div class="card__stitch"></div>
+              </div>
+            </div></article>
+            <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="求婚" onerror="this.style.display='none'" />
+                <div class="card__img-placeholder"><span class="ph-icon">💍</span><span class="ph-label">照片占位 · 求婚</span></div>
+              </div>
+              <div class="card__body">
+                <p class="card__eyebrow">2025 · Winter</p>
+                <h3 class="card__title">「你愿意嫁给我吗？」</h3>
+                <p class="card__desc">那一刻，时间仿佛静止了。</p>
+                <div class="card__stitch"></div>
+              </div>
+            </div></article>
+            <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="婚礼" onerror="this.style.display='none'" />
+                <div class="card__img-placeholder"><span class="ph-icon">🎊</span><span class="ph-label">照片占位 · 婚礼</span></div>
+              </div>
+              <div class="card__body">
+                <p class="card__eyebrow">2026 · 05 · 01</p>
+                <h3 class="card__title">此刻，请见证我们</h3>
+                <p class="card__desc">感谢您在这一天陪伴我们。您的到来，是我们最珍贵的礼物，也是这一天最美的风景。</p>
+                <div class="card__stitch"></div>
+              </div>
+            </div></article>
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+      <p class="carousel-footer">左右滑动查看更多</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       PAGE — INVITATION DETAILS
+  ════════════════════════════════════════ -->
+  <section id="page-invitation" class="page page--scroll">
+    <button class="page-nav-btn nav-up" onclick="navigateTo('carousel')">
+      <div class="page-nav-btn__pill">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </div>
+    </button>
+    <button class="page-nav-btn nav-down" onclick="navigateTo('map')">
+      <div class="page-nav-btn__pill">
+        查看地图
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </button>
+
+    <div id="invitation-inner">
+      <p class="section-label fade-up">Wedding Details</p>
+      <h2 class="section-heading fade-up">婚礼详情</h2>
+      <div class="ornament-line fade-up"><span>✦</span></div>
+      <div class="detail-card fade-up">
+        <div class="detail-icon">📅</div>
+        <div class="detail-content">
+          <p class="detail-label">Date &amp; Time</p>
+          <p class="detail-value">2026年5月1日（星期五）</p>
+          <p class="detail-sub">中午 12:00 — 婚礼仪式开始</p>
+        </div>
+      </div>
+      <div class="detail-card fade-up">
+        <div class="detail-icon">🏨</div>
+        <div class="detail-content">
+          <p class="detail-label">Venue</p>
+          <p class="detail-value">北京香格里拉饭店</p>
+          <p class="detail-sub">宴会厅 · 二层金色大厅</p>
+        </div>
+      </div>
+      <div class="detail-card fade-up">
+        <div class="detail-icon">📍</div>
+        <div class="detail-content">
+          <p class="detail-label">Address</p>
+          <p class="detail-value">北京市海淀区</p>
+          <p class="detail-sub">中关村南大街33号</p>
+        </div>
+      </div>
+      <div class="detail-card fade-up">
+        <div class="detail-icon">🎁</div>
+        <div class="detail-content">
+          <p class="detail-label">RSVP</p>
+          <p class="detail-value">请于4月20日前确认出席</p>
+          <p class="detail-sub">联系新郎: 138-XXXX-XXXX</p>
+        </div>
+      </div>
+      <div class="copy-block fade-up">
+        <button id="btn-copy-info" onclick="copyWeddingInfo()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="4" width="9" height="10.5" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M5 4V3A1.5 1.5 0 016.5 1.5h7A1.5 1.5 0 0115 3v8.5A1.5 1.5 0 0113.5 13H11" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          <span id="copy-btn-label">复制婚礼信息</span>
+        </button>
+      </div>
+    </div>
+    <div id="toast">信息已复制，可直接粘贴</div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       PAGE — MAP
+  ════════════════════════════════════════ -->
+  <section id="page-map" class="page page--scroll">
+    <button class="page-nav-btn nav-up" onclick="navigateTo('invitation')">
+      <div class="page-nav-btn__pill">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回详情
+      </div>
+    </button>
+    <button class="page-nav-btn nav-down" onclick="navigateTo('ending')">
+      <div class="page-nav-btn__pill">
+        继续
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </button>
+
+    <div id="map-inner">
+      <p class="section-label fade-up">Location</p>
+      <h2 class="section-heading fade-up">婚礼地点</h2>
+      <div class="ornament-line fade-up"><span>📍</span></div>
+      <div class="venue-strip fade-up">
+        <div class="venue-strip__icon">🏨</div>
+        <div>
+          <p class="venue-strip__name">北京香格里拉饭店</p>
+          <p class="venue-strip__addr">海淀区中关村南大街33号 · 二层金色大厅</p>
+        </div>
+      </div>
+      <div class="map-preview fade-up">
+        <div class="map-placeholder">
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:38%"></div>
+          <div class="map-road-h" style="top:62%"></div>
+          <div class="map-road-v" style="left:35%"></div>
+          <div class="map-road-v" style="left:65%"></div>
+          <div class="map-pin-wrap">
+            <div class="map-pin-emoji">📍</div>
+            <p class="map-pin-label">北京香格里拉饭店</p>
+            <p class="map-pin-addr">中关村南大街33号</p>
+          </div>
+        </div>
+      </div>
+      <div class="map-btns fade-up">
+        <button class="btn-map-primary" onclick="openAmap()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.51 10.49 1.5 8 1.5ZM8 7.5C7.17 7.5 6.5 6.83 6.5 6C6.5 5.17 7.17 4.5 8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5Z" fill="currentColor"/></svg>
+          高德地图导航
+        </button>
+        <button class="btn-map-secondary" onclick="openTencentMap()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.51 10.49 1.5 8 1.5ZM8 7.5C7.17 7.5 6.5 6.83 6.5 6C6.5 5.17 7.17 4.5 8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5Z" stroke="currentColor" stroke-width="0.5" fill="none"/><path d="M4 13l8-8M10 5h2v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          腾讯地图导航
+        </button>
+      </div>
+      <p class="map-support fade-up">点击按钮将自动唤起地图应用</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       PAGE — ENDING
+  ════════════════════════════════════════ -->
+  <section id="page-ending" class="page">
+    <button class="page-nav-btn nav-up" onclick="navigateTo('map')">
+      <div class="page-nav-btn__pill">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8L6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </div>
+    </button>
+
+    <video id="ending-video"
+      src="./assets/ending-video-ver2.mp4"
+      playsinline webkit-playsinline
+      x5-video-player-type="h5" x5-video-player-fullscreen="false"
+      preload="auto" muted></video>
+
+    <div id="loop-counter"></div>
+
+    <div id="easter-egg" role="dialog" aria-modal="true">
+      <div class="egg-trophy">🏆</div>
+      <p class="egg-congrats">恭喜！</p>
+      <div class="egg-divider"><span>✦</span></div>
+      <p class="egg-message">你已经坚持看完了<strong>一百遍</strong>！<br />截图此页面，发送至下方邮箱，<br />将获赠<strong>神秘奖品一份</strong> 🎁</p>
+      <div class="egg-email-card">
+        <p class="egg-email-label">发送截图至</p>
+        <p class="egg-email-addr" id="email-addr">kangyue9323@gmail.com</p>
+        <button id="btn-copy-egg" onclick="copyEmail()">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 3V2.5A1.5 1.5 0 015.5 1h3A1.5 1.5 0 0110 2.5v6A1.5 1.5 0 018.5 10H8" stroke="currentColor" stroke-width="1.2"/></svg>
+          复制邮箱
+        </button>
+      </div>
+      <a id="btn-mailto" href="mailto:kangyue9323@gmail.com?subject=婚礼邀请函彩蛋截图&body=我看了一百遍！来领奖品啦！">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 5L8 9.5L14.5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        发送邮件领奖
+      </a>
+      <p class="egg-footnote">微信内请截图后手动发送邮件<br/>奖品数量有限，先到先得</p>
+    </div>
+  </section>
 
 </div><!-- /#app -->
 
-<!--
-  ★ 替换 src 为真实音乐地址
--->
-<audio id="bgm" loop preload="auto">
-  <source src="./assets/bgm.mp3" type="audio/mpeg" />
-</audio>
-
 <script>
-/* ══════════════════════════════════════════
-   STATE
-══════════════════════════════════════════ */
-const state = {
-  loaded:        false,
-  started:       false,
-  videoEnded:    false,
-  bgmUnlocked:   false,
-  swipeReady:    false,
-  transitioning: false,
-};
+/* ══════════════════════════════════════════════════════
+   NAVIGATION SYSTEM
+   All transitions are GSAP opacity fades.
+   Single <audio id="bgm"> is never destroyed.
+══════════════════════════════════════════════════════ */
+const PAGE_DISPLAY = { main:'flex', video:'block', carousel:'block', invitation:'block', map:'block', ending:'block' };
+let currentPage   = 'main';
+let transitioning = false;
 
-/* ══════════════════════════════════════════
-   ELEMENT REFS
-══════════════════════════════════════════ */
-const $loader        = document.getElementById('loader');
-const $loaderFill    = document.getElementById('loader-fill');
-const $loaderPct     = document.getElementById('loader-pct');
-const $startOverlay  = document.getElementById('start-overlay');
-const $btnStart      = document.getElementById('btn-start');
-const $video         = document.getElementById('main-video');
-const $progress      = document.getElementById('video-progress');
-const $progressFill  = document.getElementById('video-progress-fill');
-const $swipeHint     = document.getElementById('swipe-hint');
-const $nextPage      = document.getElementById('next-page');
-const $bgm           = document.getElementById('bgm');
+function navigateTo(id) {
+  if (id === currentPage || transitioning) return;
+  transitioning = true;
 
-/* ══════════════════════════════════════════
-   1. LOADER — video canplaythrough
-══════════════════════════════════════════ */
-function setLoaderProgress(pct) {
-  $loaderFill.style.width = pct + '%';
-  $loaderPct.textContent  = Math.round(pct) + '%';
+  const from = document.getElementById('page-' + currentPage);
+  const to   = document.getElementById('page-' + id);
+
+  onPageLeave(currentPage);
+
+  gsap.timeline({ onComplete: () => { transitioning = false; onPageEnter(id); } })
+    .to(from, { opacity: 0, duration: 0.30, ease: 'power2.in' })
+    .call(() => {
+      from.style.display = 'none';
+      from.style.opacity = '';
+      const disp = PAGE_DISPLAY[id] || 'block';
+      to.style.display   = disp;
+      to.style.flexDirection = (disp === 'flex') ? 'column' : '';
+      to.style.opacity   = '0';
+      // Reset scroll on scrollable pages
+      to.scrollTop = 0;
+    })
+    .to(to, { opacity: 1, duration: 0.40, ease: 'power2.out' });
+
+  currentPage = id;
 }
 
-// Simulate incremental progress via buffered timeRanges
-function updateBufferProgress() {
-  if (state.loaded) return;
-  if ($video.buffered.length > 0 && $video.duration > 0) {
-    const buffered = $video.buffered.end($video.buffered.length - 1);
-    const pct      = Math.min((buffered / $video.duration) * 100, 99);
-    setLoaderProgress(pct);
+function onPageLeave(id) {
+  if (id === 'ending') {
+    document.getElementById('ending-video').pause();
   }
 }
 
-$video.addEventListener('progress', updateBufferProgress);
-$video.addEventListener('canplaythrough', onVideoReady);
+/* ══════════════════════════════════════════════════════
+   GLOBAL SWIPE / WHEEL NAVIGATION
+══════════════════════════════════════════════════════ */
+let touchY0 = 0, touchX0 = 0;
+document.addEventListener('touchstart', e => {
+  touchY0 = e.touches[0].clientY;
+  touchX0 = e.touches[0].clientX;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (transitioning) return;
+  const dy = touchY0 - e.changedTouches[0].clientY;
+  const dx = Math.abs(touchX0 - e.changedTouches[0].clientX);
+  if (Math.abs(dy) < 70 || dx > Math.abs(dy) * 0.65) return;
+  handleSwipe(dy > 0 ? 'up' : 'down');
+}, { passive: true });
+document.addEventListener('wheel', e => {
+  if (transitioning || Math.abs(e.deltaY) < 40) return;
+  handleSwipe(e.deltaY > 0 ? 'up' : 'down');
+}, { passive: true });
 
-// Fallback: if canplaythrough never fires (e.g. WeChat cache), resolve after short delay
-let loaderFallback = setTimeout(onVideoReady, 6000);
+function handleSwipe(dir) {
+  const nav = {
+    video:      { up: 'carousel' },
+    carousel:   { up: 'invitation', down: 'video' },
+    invitation: { up: 'map',        down: 'carousel' },
+    map:        { up: 'ending',     down: 'invitation' },
+    ending:     { down: 'map' },
+  };
+  const map = nav[currentPage];
+  if (!map) return;
+  // Video page: only navigate if video has ended
+  if (currentPage === 'video' && dir === 'up' && !videoState.swipeReady) return;
+  const target = map[dir];
+  if (target) navigateTo(target);
+}
 
-function onVideoReady() {
-  if (state.loaded) return;
-  state.loaded = true;
-  clearTimeout(loaderFallback);
-  setLoaderProgress(100);
+/* ══════════════════════════════════════════════════════
+   BGM  &  MUSIC TOGGLE
+══════════════════════════════════════════════════════ */
+const $bgm         = document.getElementById('bgm');
+const $musicToggle = document.getElementById('music-toggle');
+let bgmStarted = false;
 
-  // GIF pop then loader exit → typewriter starts
+// WeChat unlock
+function wxUnlock() { $bgm.load(); }
+if (typeof WeixinJSBridge === 'undefined') {
+  document.addEventListener('WeixinJSBridgeReady', wxUnlock, { once: true });
+} else { wxUnlock(); }
+
+function startBgm() {
+  if (bgmStarted) return;
+  bgmStarted = true;
+  $bgm.volume = 0;
+  $bgm.play()
+    .then(() => gsap.to($bgm, { volume: 0.75, duration: 1.5, ease: 'power2.out' }))
+    .catch(() => {});
+  $musicToggle.classList.add('visible', 'playing');
+}
+
+function toggleBgm() {
+  if ($bgm.paused) {
+    $bgm.play().catch(() => {});
+    $musicToggle.classList.add('playing');
+  } else {
+    $bgm.pause();
+    $musicToggle.classList.remove('playing');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PAGE — MAIN  (asset preloader + start button)
+══════════════════════════════════════════════════════ */
+const ASSETS = [
+  { type:'image', src:'./assets/placeholder.gif'              },
+  { type:'image', src:'./assets/headshot3.jpg'                },
+  { type:'audio', src:'./assets/bgm.wav'                      },
+  { type:'video', src:'./assets/header_banner_video_ver2.mp4' },
+  { type:'video', src:'./assets/ending-video-ver2.mp4'        },
+  { type:'video', src:'./assets/ending-video.mp4'             },
+];
+
+const $loaderFill = document.getElementById('loader-fill');
+const $loaderPct  = document.getElementById('loader-pct');
+const $loader     = document.getElementById('loader');
+const $overlay    = document.getElementById('start-overlay');
+const $btnStart   = document.getElementById('btn-start');
+let loadedCount   = 0;
+
+function onAssetReady() {
+  loadedCount++;
+  const pct = Math.round((loadedCount / ASSETS.length) * 100);
+  $loaderFill.style.width = pct + '%';
+  $loaderPct.textContent  = pct + '%';
+  if (loadedCount >= ASSETS.length) allAssetsReady();
+}
+
+function preloadAsset(a) {
+  const timeout = setTimeout(onAssetReady, a.type === 'video' ? 8000 : 5000);
+  const done = () => { clearTimeout(timeout); onAssetReady(); };
+  if (a.type === 'image') {
+    const img = new Image(); img.onload = img.onerror = done; img.src = a.src;
+  } else if (a.type === 'audio') {
+    const aud = new Audio(); aud.preload = 'auto';
+    aud.oncanplaythrough = aud.onerror = done; aud.src = a.src; aud.load();
+  } else {
+    const vid = document.createElement('video'); vid.preload = 'metadata'; vid.muted = true;
+    vid.onloadedmetadata = vid.onerror = done; vid.src = a.src; vid.load();
+  }
+}
+ASSETS.forEach(preloadAsset);
+
+function allAssetsReady() {
   gsap.timeline()
-    .to('#loader-gif', {
-      y: -10, duration: 0.18, ease: 'power2.out',
-    })
-    .to('#loader-gif', {
-      y: 0, duration: 0.22, ease: 'bounce.out',
-    })
+    .to('#loader-gif', { y: -10, duration: 0.18, ease: 'power2.out' })
+    .to('#loader-gif', { y: 0,   duration: 0.22, ease: 'bounce.out' })
     .to($loader, {
-      opacity: 0, duration: 0.45, ease: 'power2.in',
-      delay: 0.25,
+      opacity: 0, duration: 0.45, ease: 'power2.in', delay: 0.25,
       onComplete: () => {
         $loader.style.display = 'none';
-        startTypewriter();
+        $overlay.style.display = 'flex';
+        gsap.to($overlay, { opacity: 1, duration: 0.5, ease: 'power2.out', onComplete: startTypewriter });
       },
     });
 }
 
-/* ══════════════════════════════════════════
-   1b. TYPEWRITER — button text reveal
-══════════════════════════════════════════ */
-const BTN_LABEL  = '开启邀请';
-const BTN_DELAY  = 120; // ms per character
-
+const BTN_LABEL = '开启邀请';
 function startTypewriter() {
   const $t = document.getElementById('btn-text');
-  let i = 0;
-  $t.textContent = '';
-
-  function tick() {
-    if (i < BTN_LABEL.length) {
-      $t.textContent += BTN_LABEL[i++];
-      setTimeout(tick, BTN_DELAY);
-    } else {
-      // Typing done — show blinking cursor
-      $t.classList.add('typing-done');
-    }
-  }
-  // Slight delay so overlay fade-in finishes first
-  setTimeout(tick, 200);
+  let i = 0; $t.textContent = '';
+  (function tick() {
+    if (i < BTN_LABEL.length) { $t.textContent += BTN_LABEL[i++]; setTimeout(tick, 120); }
+  })();
 }
 
-/* ══════════════════════════════════════════
-   2. WECHAT AUTOPLAY HACK
-   WeChat blocks audio/video play() until
-   WeixinJSBridgeReady fires or user gesture.
-══════════════════════════════════════════ */
-function wxUnlock() {
-  // Touch any media element to satisfy WeChat's policy
-  $bgm.load();
-  $video.load();
-  state.bgmUnlocked = true;
-}
-
-if (typeof WeixinJSBridge === 'undefined') {
-  document.addEventListener('WeixinJSBridgeReady', wxUnlock, { once: true });
-} else {
-  wxUnlock();
-}
-
-/* ══════════════════════════════════════════
-   3. START BUTTON
-══════════════════════════════════════════ */
-$btnStart.addEventListener('click', handleStart, { once: true });
-$btnStart.addEventListener('touchend', function onTouch(e) {
-  e.preventDefault();
-  $btnStart.removeEventListener('touchend', onTouch);
-  handleStart();
+let mainStarted = false;
+$btnStart.addEventListener('click', handleMainStart, { once: true });
+$btnStart.addEventListener('touchend', function onT(e) {
+  e.preventDefault(); $btnStart.removeEventListener('touchend', onT);
+  handleMainStart();
 }, { passive: false });
 
-function handleStart() {
-  if (state.started) return;
-  state.started = true;
-
-  // Felt-style button collapse
-  gsap.to($btnStart, {
-    scale: 0.88, opacity: 0, duration: 0.25, ease: 'power2.in',
-  });
-
-  // Fade out entire start overlay
-  gsap.to($startOverlay, {
-    opacity: 0, duration: 0.55, delay: 0.15, ease: 'power2.inOut',
-    onComplete: () => {
-      $startOverlay.style.display = 'none';
-      // Show progress bar
-      $progress.classList.add('visible');
-    },
-  });
-
-  // Play video
-  const videoPlay = $video.play();
-  if (videoPlay !== undefined) {
-    videoPlay.catch(() => {
-      // Muted autoplay fallback — try again muted
-      $video.muted = true;
-      $video.play().catch(() => {});
-    });
-  }
-
-  // Play BGM
-  $bgm.volume = 0;
-  const bgmPlay = $bgm.play();
-  if (bgmPlay !== undefined) {
-    bgmPlay
-      .then(() => gsap.to($bgm, { volume: 0.75, duration: 1.5, ease: 'power2.out' }))
-      .catch(() => {
-        // WeChat may still block — retry on next touch
-        document.addEventListener('touchstart', function retryBgm() {
-          $bgm.play().then(() => {
-            gsap.to($bgm, { volume: 0.75, duration: 1.5 });
-          }).catch(() => {});
-          document.removeEventListener('touchstart', retryBgm);
-        }, { once: true, passive: true });
-      });
-  }
+function handleMainStart() {
+  if (mainStarted) return;
+  mainStarted = true;
+  gsap.to($btnStart, { scale: 0.88, opacity: 0, duration: 0.25, ease: 'power2.in' });
+  gsap.to($overlay,  { opacity: 0,  duration: 0.55, delay: 0.15, ease: 'power2.inOut' });
+  startBgm();
+  setTimeout(() => navigateTo('video'), 500);
 }
 
-/* ══════════════════════════════════════════
-   4. VIDEO PROGRESS BAR
-══════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   PAGE — VIDEO
+══════════════════════════════════════════════════════ */
+const $video        = document.getElementById('main-video');
+const $progress     = document.getElementById('video-progress');
+const $progressFill = document.getElementById('video-progress-fill');
+const $swipeHint    = document.getElementById('swipe-hint');
+
+const videoState = { loaded: false, started: false, swipeReady: false };
+
+$video.addEventListener('canplaythrough', onVideoReady, { once: true });
+setTimeout(onVideoReady, 6000); // fallback
+
+function onVideoReady() {
+  if (videoState.loaded) return;
+  videoState.loaded = true;
+}
+
+function onPageEnter(id) {
+  if (id === 'video' && !videoState.started) {
+    videoState.started = true;
+    $progress.classList.add('visible');
+    const p = $video.play();
+    if (p) p.catch(() => { $video.muted = true; $video.play().catch(() => {}); });
+  }
+  if (id === 'carousel')   initCarousel();
+  if (id === 'invitation') initFadeObserver('#page-invitation .fade-up');
+  if (id === 'map')        initFadeObserver('#page-map .fade-up');
+  if (id === 'ending')     startEndingVideo();
+}
+
 $video.addEventListener('timeupdate', () => {
   if (!$video.duration) return;
-  const pct = ($video.currentTime / $video.duration) * 100;
-  $progressFill.style.width = pct + '%';
+  $progressFill.style.width = ($video.currentTime / $video.duration * 100) + '%';
 });
 
-/* ══════════════════════════════════════════
-   5. VIDEO END — freeze + swipe hint
-══════════════════════════════════════════ */
-$video.addEventListener('ended', onVideoEnded);
-
-function onVideoEnded() {
-  state.videoEnded  = true;
-  state.swipeReady  = true;
-
-  // Fade out progress bar
-  gsap.to($progress, { opacity: 0, duration: 0.4 });
-
-  // Fade in swipe hint
-  gsap.to($swipeHint, {
-    opacity: 1, duration: 0.6, ease: 'power2.out',
-    onComplete: () => { $swipeHint.style.pointerEvents = 'auto'; },
+$video.addEventListener('ended', () => {
+  videoState.swipeReady = true;
+  gsap.to($progress,   { opacity: 0, duration: 0.4 });
+  gsap.to($swipeHint,  { opacity: 1, duration: 0.6, ease: 'power2.out',
+    onComplete: () => { $swipeHint.style.pointerEvents = 'auto'; }
   });
+  gsap.to('#hint-svg', { y: -7, duration: 0.7, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+  gsap.to('.hint-ring', { scale: 1.08, duration: 0.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+});
 
-  // Bounce loop on chevron icon (向上浮动)
-  gsap.to('#hint-svg', {
-    y: -7,
-    duration: 0.7,
-    ease: 'sine.inOut',
-    yoyo: true,
-    repeat: -1,
-  });
+/* ══════════════════════════════════════════════════════
+   PAGE — CAROUSEL
+══════════════════════════════════════════════════════ */
+let swiperInst = null;
 
-  // Pulse the ring
-  gsap.to('.hint-ring', {
-    scale: 1.08,
-    duration: 0.9,
-    ease: 'sine.inOut',
-    yoyo: true,
-    repeat: -1,
+function initCarousel() {
+  // Entrance animation (reset card opacity first, then animate in)
+  gsap.set('.card', { opacity: 0, y: 24 });
+  gsap.to('.card', { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', stagger: 0.10 });
+  gsap.from('.carousel-header', { y: -20, opacity: 0, duration: 0.5, ease: 'power2.out' });
+  gsap.from('#page-carousel .page-nav-btn', { opacity: 0, y: 10, duration: 0.45, ease: 'power2.out', delay: 0.5, stagger: 0.1 });
+
+  if (swiperInst) return; // already initialized
+  swiperInst = new Swiper('#story-swiper', {
+    slidesPerView: 'auto', spaceBetween: 14,
+    grabCursor: true, touchRatio: 1, touchAngle: 45, threshold: 8,
+    resistance: true, resistanceRatio: 0.65,
+    freeMode: false, speed: 380,
+    navigation: { prevEl: '#nav-prev', nextEl: '#nav-next', disabledClass: 'swiper-button-disabled' },
+    pagination: { el: '.swiper-pagination', clickable: true },
+    keyboard: { enabled: true, onlyInViewport: true },
+    a11y: { prevSlideMessage: '上一张', nextSlideMessage: '下一张' },
   });
 }
 
-/* ══════════════════════════════════════════
-   6. SWIPE-UP TRANSITION
-══════════════════════════════════════════ */
-let touchStartY = 0;
-let touchStartX = 0;
+/* ══════════════════════════════════════════════════════
+   PAGE — INVITATION
+══════════════════════════════════════════════════════ */
+let invObserverDone = false;
 
-document.addEventListener('touchstart', (e) => {
-  touchStartY = e.touches[0].clientY;
-  touchStartX = e.touches[0].clientX;
-}, { passive: true });
-
-document.addEventListener('touchend', (e) => {
-  if (!state.swipeReady || state.transitioning) return;
-
-  const deltaY = touchStartY - e.changedTouches[0].clientY;
-  const deltaX = Math.abs(touchStartX - e.changedTouches[0].clientX);
-
-  // Must be mostly vertical and sufficient distance
-  if (deltaY > 60 && deltaX < 80) {
-    triggerPageTransition();
+function initFadeObserver(selector) {
+  const els = document.querySelectorAll(selector);
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('visible')); return;
   }
-}, { passive: true });
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -28px 0px' });
+  els.forEach(el => {
+    el.classList.remove('visible');
+    obs.observe(el);
+  });
+}
 
-// Also allow mouse wheel on desktop preview
-document.addEventListener('wheel', (e) => {
-  if (!state.swipeReady || state.transitioning) return;
-  if (e.deltaY > 40) triggerPageTransition();
-}, { passive: true });
+const WEDDING_TEXT =
+  '【黄啸宇 & 康越 婚礼邀请】' +
+  '时间：2026年5月1日 12:00；' +
+  '地点：北京香格里拉饭店(二层金色大厅)；' +
+  '地址：海淀区中关村南大街33号。';
 
-function triggerPageTransition() {
-  state.transitioning = true;
+function copyWeddingInfo() {
+  const btn = document.getElementById('btn-copy-info');
+  const lbl = document.getElementById('copy-btn-label');
+  function onOK() {
+    lbl.textContent = '✅ 已复制'; btn.classList.add('copied');
+    gsap.timeline()
+      .to(btn, { scale: 0.90, duration: 0.10, ease: 'power2.in' })
+      .to(btn, { scale: 1.06, duration: 0.18, ease: 'power2.out' })
+      .to(btn, { scale: 1.00, duration: 0.22, ease: 'elastic.out(1,0.5)' });
+    showToast();
+    setTimeout(() => { lbl.textContent = '复制婚礼信息'; btn.classList.remove('copied'); }, 1500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(WEDDING_TEXT).then(onOK).catch(fb);
+  } else fb();
+  function fb() {
+    const ta = document.createElement('textarea');
+    ta.value = WEDDING_TEXT; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); onOK(); } catch(e) {}
+    ta.remove();
+  }
+}
 
-  // Reveal next page from below
-  gsap.set($nextPage, { y: '100%' });
+let toastTl = null;
+function showToast() {
+  const t = document.getElementById('toast');
+  if (toastTl) toastTl.kill();
+  gsap.set(t, { scale: 0.85 });
+  toastTl = gsap.timeline()
+    .to(t, { opacity: 1, scale: 1, duration: 0.25, ease: 'back.out(1.6)' })
+    .to(t, { opacity: 0, scale: 0.9, duration: 0.30, ease: 'power2.in', delay: 1.1 });
+}
 
-  const tl = gsap.timeline();
+/* ══════════════════════════════════════════════════════
+   PAGE — MAP
+══════════════════════════════════════════════════════ */
+const LNG = 116.321, LAT = 39.942;
+const NAME = encodeURIComponent('北京香格里拉饭店');
 
-  // 1. Hint exit
-  tl.to($swipeHint, { opacity: 0, duration: 0.25, ease: 'power2.in' })
+function openAmap() {
+  window.location.href =
+    'https://uri.amap.com/marker?position=' + LNG + ',' + LAT +
+    '&name=' + NAME + '&src=wedding&coordinate=gaode&callnative=1';
+}
+function openTencentMap() {
+  window.location.href =
+    'https://apis.map.qq.com/uri/v1/marker?marker=coord:' + LAT + ',' + LNG +
+    ';title:北京香格里拉饭店;addr:海淀区中关村南大街33号&referer=wedding';
+}
 
-  // 2. Video layer slides up & scales slightly
-    .to('#video-layer', {
-      y: '-8%',
-      scale: 0.96,
-      duration: 0.55,
-      ease: 'power2.inOut',
-    }, '<0.1')
+/* ══════════════════════════════════════════════════════
+   PAGE — ENDING
+══════════════════════════════════════════════════════ */
+const $endingVideo = document.getElementById('ending-video');
+const $loopBadge   = document.getElementById('loop-counter');
+const $easterEgg   = document.getElementById('easter-egg');
+const LOOP_TARGET  = 100;
+let loopCount = 0;
 
-  // 3. Next page slides up from bottom
-    .to($nextPage, {
-      y: '0%',
-      duration: 0.55,
-      ease: 'power2.inOut',
-    }, '<0.05')
+function startEndingVideo() {
+  loopCount = 0;
+  $loopBadge.textContent = '';
+  $endingVideo.currentTime = 0;
+  const p = $endingVideo.play();
+  if (p) p.catch(() => { $endingVideo.muted = true; $endingVideo.play().catch(() => {}); });
+  gsap.from('#page-ending .page-nav-btn', { opacity: 0, y: -8, duration: 0.5, ease: 'power2.out', delay: 0.6 });
+}
 
-  // 4. BGM crossfade (fade out)
-    .to($bgm, { volume: 0, duration: 0.8, ease: 'power2.in' }, '<')
+$endingVideo.addEventListener('ended', function onEndLoop() {
+  loopCount++;
+  if (loopCount >= LOOP_TARGET) {
+    $endingVideo.removeEventListener('ended', onEndLoop);
+    showEasterEgg(); return;
+  }
+  const rem = LOOP_TARGET - loopCount;
+  $loopBadge.textContent = '× ' + loopCount + ' / ' + LOOP_TARGET;
+  $endingVideo.currentTime = 0;
+  $endingVideo.play().catch(() => {});
+});
 
-  // 5. Navigate to card carousel page
-    .call(() => {
-      window.location.href = './card-carousel.html';
-    });
+function showEasterEgg() {
+  $endingVideo.pause();
+  spawnConfetti();
+  $easterEgg.classList.add('visible');
+  gsap.to($easterEgg, { opacity: 1, duration: 0.8, ease: 'power2.out' });
+  gsap.from('.egg-trophy', { scale: 0, rotation: -15, duration: 0.7, ease: 'back.out(1.8)', delay: 0.3 });
+  gsap.from(['.egg-congrats','.egg-divider','.egg-message','.egg-email-card','#btn-mailto','.egg-footnote'],
+    { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out', stagger: 0.08, delay: 0.5 });
+}
+
+function spawnConfetti() {
+  const colors = ['#C9A96E','#E8D5A3','#C4855A','#8BAF7C','#E8C4B0','#fff'];
+  for (let i = 0; i < 55; i++) {
+    const el = document.createElement('div'); el.className = 'confetti-dot';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width  = (Math.random() * 7 + 4) + 'px';
+    el.style.height = (Math.random() * 7 + 4) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.getElementById('page-ending').appendChild(el);
+    gsap.fromTo(el,
+      { x: window.innerWidth * Math.random(), y: -20, rotation: Math.random() * 360, opacity: 1 },
+      { y: window.innerHeight + 40, x: '+=' + ((Math.random() - 0.5) * 160),
+        rotation: '+=' + (Math.random() * 540), opacity: 0,
+        duration: 2.2 + Math.random() * 2, ease: 'power1.in',
+        delay: Math.random() * 1.2, onComplete: () => el.remove() });
+  }
+}
+
+function copyEmail() {
+  const addr = 'kangyue9323@gmail.com';
+  const btn  = document.getElementById('btn-copy-egg');
+  function onOK() {
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.5 9L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> 已复制';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 3V2.5A1.5 1.5 0 015.5 1h3A1.5 1.5 0 0110 2.5v6A1.5 1.5 0 018.5 10H8" stroke="currentColor" stroke-width="1.2"/></svg> 复制邮箱';
+    }, 2500);
+  }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(addr).then(onOK).catch(fb);
+  } else fb();
+  function fb() {
+    const ta = document.createElement('textarea');
+    ta.value = addr; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); onOK(); } catch(e) {} ta.remove();
+  }
 }
 </script>
 </body>

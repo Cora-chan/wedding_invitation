@@ -338,6 +338,33 @@
 </div>
 
 <script>
+/* ── BGM Persistence ── */
+(function bgmPersist() {
+  if (sessionStorage.getItem('bgmPlaying') !== '1') return;
+  var audio = new Audio('./assets/bgm.wav');
+  audio.loop    = true;
+  audio.volume  = 0.75;
+  audio.preload = 'auto';
+  var savedTime = parseFloat(sessionStorage.getItem('bgmTime') || '0');
+  function tryPlay() {
+    if (audio.readyState >= 2) audio.currentTime = savedTime;
+    audio.play().catch(function () {
+      document.addEventListener('touchstart', function retry() {
+        audio.play().catch(function(){});
+        document.removeEventListener('touchstart', retry);
+      }, { once: true, passive: true });
+    });
+  }
+  audio.addEventListener('canplay', tryPlay, { once: true });
+  audio.load();
+  function saveTime() { sessionStorage.setItem('bgmTime', String(audio.currentTime)); }
+  window.addEventListener('pagehide',     saveTime);
+  window.addEventListener('beforeunload', saveTime);
+  if (typeof WeixinJSBridge !== 'undefined') {
+    document.addEventListener('WeixinJSBridgeReady', tryPlay, { once: true });
+  }
+})();
+
 const video      = document.getElementById('ending-video');
 const btnBack    = document.getElementById('btn-back');
 const easterEgg  = document.getElementById('easter-egg');
