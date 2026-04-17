@@ -178,7 +178,7 @@ function initCopyFunction() {
     if (!btn) return;
 
     btn.addEventListener('click', () => {
-        const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年5月1日 12:00；地点：北京香格里拉饭店";
+        const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年9月5日 18:00；地点：上海苏词蟹宴；地址：上海市黄浦区外滩中山东一路外滩18号4楼。";
         console.log(`${DEBUG_PREFIX}[Event] 触发复制功能`);
         navigator.clipboard.writeText(text).then(() => {
             const old = btn.innerText;
@@ -190,7 +190,7 @@ function initCopyFunction() {
 
 function initCopyFunction(btn) {
     btn.addEventListener('click', function() {
-        const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年5月1日 12:00；地点：北京香格里拉饭店；地址：海淀区中关村南大街33号。";
+        const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年9月5日 18:00；地点：上海苏词蟹宴；地址：上海市黄浦区外滩中山东一路外滩18号4楼。";
         navigator.clipboard.writeText(text).then(() => {
             const originText = btn.innerText;
             btn.innerText = "✅ 已复制";
@@ -239,9 +239,10 @@ function initFadeObserver() {
 // ══════════════════════════════════
 function openMap() {
   // 替换为真实经纬度和酒店名
-  var lat  = 39.9912;   // 纬度 latitude
-  var lng  = 116.3095;  // 经度 longitude
-  var name = encodeURIComponent('北京香格里拉饭店');
+const LNG =  121.48964372611456, LAT = 31.238456340956624;
+  var lng = LNG;
+  var lat = LAT;
+  var name = encodeURIComponent('上海外滩18号');
 
   // 高德地图
   var amapUrl = 'https://uri.amap.com/marker?position=' + lng + ',' + lat

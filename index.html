@@ -17,6 +17,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="index.js" defer></script>
+  <!-- 高德地图 JS API v2.0 -->
+  <script>
+    window._AMapSecurityConfig = { securityJsCode: 'ed319c2b2789d83e036d156d775f211c' };
+  </script>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=5434209db0f89a9cea2afc8618b126e8" async></script>
 
   <style>
     /* ════════════════════════════════════════
@@ -528,6 +533,7 @@
     .venue-strip__icon { font-size:22px; flex-shrink:0; }
     .venue-strip__name { font-size:clamp(14px,4.2vw,16px); font-weight:600; color:var(--ivory); letter-spacing:.04em; margin-bottom:2px; }
     .venue-strip__addr { font-size:12px; font-weight:300; color:rgba(245,230,202,.45); letter-spacing:.05em; }
+    #amap-container { width:100%; height:220px; }
     .map-preview {
       width:100%; border-radius:16px 4px 18px 4px / 4px 18px 4px 16px;
       overflow:hidden; border:2px dashed rgba(245,230,202,.22);
@@ -662,7 +668,7 @@
         <p class="start-subtitle">诚邀您出席</p>
         <h3 class="start-main-title">黄啸宇 &amp; 康越</h3>
         <div class="start-heart" aria-hidden="true">♥</div>
-        <p class="start-date">2026.05.01</p>
+        <p class="start-date">2026.09.05</p>
       </div>
       <div class="overlay-bottom">
         <button id="btn-start" aria-label="开启邀请"><span id="btn-text"></span></button>
@@ -733,7 +739,9 @@
         <div class="swiper carousel-swiper" id="story-swiper">
           <div class="swiper-wrapper">
             <article class="swiper-slide"><div class="card">
-             
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="相知" onerror="this.style.display='none'" />
+              </div>
               <div class="card__body">
                 <p class="card__eyebrow">2020 · Spring</p>
                 <h3 class="card__title">初见，是命中注定</h3>
@@ -811,39 +819,38 @@
     </button>
 
     <div id="invitation-inner">
-      <p class="section-label fade-up">Wedding Details</p>
+      <p class="section-label fade-up">Details</p>
       <h2 class="section-heading fade-up">婚礼详情</h2>
       <div class="ornament-line fade-up"><span>✦</span></div>
       <div class="detail-card fade-up">
         <div class="detail-icon">📅</div>
         <div class="detail-content">
-          <p class="detail-label">Date &amp; Time</p>
-          <p class="detail-value">2026年5月1日（星期五）</p>
-          <p class="detail-sub">中午 12:00 — 婚礼仪式开始</p>
+          <p class="detail-label">时间</p>
+          <p class="detail-value">2026年9月5日（星期六）</p>
+          <p class="detail-sub">下午 6:00 — 到达场地</p>
+           <p class="detail-sub">下午 7:00 — 仪式开始</p>
         </div>
       </div>
       <div class="detail-card fade-up">
         <div class="detail-icon">🏨</div>
         <div class="detail-content">
-          <p class="detail-label">Venue</p>
-          <p class="detail-value">北京香格里拉饭店</p>
-          <p class="detail-sub">宴会厅 · 二层金色大厅</p>
+          <p class="detail-label">地点</p>
+          <p class="detail-value">上海 苏词蟹宴</p>
+          <p class="detail-sub">大厅</p>
         </div>
       </div>
       <div class="detail-card fade-up">
         <div class="detail-icon">📍</div>
         <div class="detail-content">
-          <p class="detail-label">Address</p>
-          <p class="detail-value">北京市海淀区</p>
-          <p class="detail-sub">中关村南大街33号</p>
+          <p class="detail-label">地址</p>
+          <p class="detail-value">上海市黄浦区外滩中山东一路外滩18号4楼</p>
         </div>
       </div>
       <div class="detail-card fade-up">
         <div class="detail-icon">🎁</div>
         <div class="detail-content">
-          <p class="detail-label">RSVP</p>
-          <p class="detail-value">请于4月20日前确认出席</p>
-          <p class="detail-sub">联系新郎: 138-XXXX-XXXX</p>
+          <p class="detail-label">联系人</p>
+          <p class="detail-value">黄建华 翁敏华 杜婉芳 康明 黄啸宇 康越</p>
         </div>
       </div>
       <div class="copy-block fade-up">
@@ -883,32 +890,17 @@
       <div class="venue-strip fade-up">
         <div class="venue-strip__icon">🏨</div>
         <div>
-          <p class="venue-strip__name">北京香格里拉饭店</p>
-          <p class="venue-strip__addr">海淀区中关村南大街33号 · 二层金色大厅</p>
+          <p class="venue-strip__name">上海 苏词蟹宴</p>
+          <p class="venue-strip__addr">上海市黄浦区外滩中山东一路外滩18号4楼</p>
         </div>
       </div>
       <div class="map-preview fade-up">
-        <div class="map-placeholder">
-          <div class="map-grid"></div>
-          <div class="map-road-h" style="top:38%"></div>
-          <div class="map-road-h" style="top:62%"></div>
-          <div class="map-road-v" style="left:35%"></div>
-          <div class="map-road-v" style="left:65%"></div>
-          <div class="map-pin-wrap">
-            <div class="map-pin-emoji">📍</div>
-            <p class="map-pin-label">北京香格里拉饭店</p>
-            <p class="map-pin-addr">中关村南大街33号</p>
-          </div>
-        </div>
+        <div id="amap-container"></div>
       </div>
       <div class="map-btns fade-up">
         <button class="btn-map-primary" onclick="openAmap()">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.51 10.49 1.5 8 1.5ZM8 7.5C7.17 7.5 6.5 6.83 6.5 6C6.5 5.17 7.17 4.5 8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5Z" fill="currentColor"/></svg>
           高德地图导航
-        </button>
-        <button class="btn-map-secondary" onclick="openTencentMap()">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.51 10.49 1.5 8 1.5ZM8 7.5C7.17 7.5 6.5 6.83 6.5 6C6.5 5.17 7.17 4.5 8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5Z" stroke="currentColor" stroke-width="0.5" fill="none"/><path d="M4 13l8-8M10 5h2v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          腾讯地图导航
         </button>
       </div>
       <p class="map-support fade-up">点击按钮将自动唤起地图应用</p>
@@ -1258,7 +1250,7 @@ function handleMainStart() {
 
   gsap.to($btnStart, { scale: 0.88, opacity: 0, duration: 0.25, ease: 'power2.in' });
   gsap.to($overlay,  { opacity: 0,  duration: 0.55, delay: 0.15, ease: 'power2.inOut' });
-  setTimeout(() => navigateTo('video'), 500);
+  setTimeout(() => navigateTo('video'), 500); // TODO: 测试完改回 'video'
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1288,7 +1280,7 @@ function onPageEnter(id) {
   }
   if (id === 'carousel')   initCarousel();
   if (id === 'invitation') initFadeObserver('#page-invitation .fade-up');
-  if (id === 'map')        initFadeObserver('#page-map .fade-up');
+  if (id === 'map')        { initFadeObserver('#page-map .fade-up'); initAMap(); }
   if (id === 'ending')     startEndingVideo();
 }
 
@@ -1353,9 +1345,9 @@ function initFadeObserver(selector) {
 
 const WEDDING_TEXT =
   '【黄啸宇 & 康越 婚礼邀请】' +
-  '时间：2026年5月1日 12:00；' +
-  '地点：北京香格里拉饭店(二层金色大厅)；' +
-  '地址：海淀区中关村南大街33号。';
+  '时间：2026年9月5日 18:00；' +
+  '地点：上海苏词蟹宴；' +
+  '地址：上海市黄浦区外滩中山东一路外滩18号4楼。';
 
 function copyWeddingInfo() {
   const btn = document.getElementById('btn-copy-info');
@@ -1394,18 +1386,34 @@ function showToast() {
 /* ══════════════════════════════════════════════════════
    PAGE — MAP
 ══════════════════════════════════════════════════════ */
-const LNG = 116.321, LAT = 39.942;
-const NAME = encodeURIComponent('北京香格里拉饭店');
+const LNG = 121.49, LAT = 31.24;
+
+const NAME = encodeURIComponent('上海外滩18号');
+
+let amapInst = null;
+function initAMap() {
+  if (amapInst || typeof AMap === 'undefined') return;
+  amapInst = new AMap.Map('amap-container', {
+    zoom: 16,
+    center: [121.49, 31.24],
+    mapStyle: 'amap://styles/dark',
+  });
+  var marker = new AMap.Marker({
+    position: new AMap.LngLat(121.49, 31.24),
+    content: '<div style="font-size:28px;line-height:1;transform:translate(-50%,-100%)">📍</div>',
+    offset: new AMap.Pixel(0, 0),
+  });
+  amapInst.add(marker);
+  // AMap 未就绪时（async 脚本尚未加载完）重试
+  if (!amapInst) {
+    setTimeout(initAMap, 500);
+  }
+}
 
 function openAmap() {
   window.location.href =
     'https://uri.amap.com/marker?position=' + LNG + ',' + LAT +
     '&name=' + NAME + '&src=wedding&coordinate=gaode&callnative=1';
-}
-function openTencentMap() {
-  window.location.href =
-    'https://apis.map.qq.com/uri/v1/marker?marker=coord:' + LAT + ',' + LNG +
-    ';title:北京香格里拉饭店;addr:海淀区中关村南大街33号&referer=wedding';
 }
 
 /* ══════════════════════════════════════════════════════
