@@ -258,3 +258,104 @@ document.addEventListener('touchend', function(e) {
 document.addEventListener('gesturestart', function(e) {
   e.preventDefault();
 }, { passive: false });
+
+// ══════════════════════════════════
+// 1. 资源列表 & 预加载逻辑
+// ══════════════════════════════════
+const assets = [
+  { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' },
+  { id: 'video2', url: './assets/ending-video-ver2.mp4', type: 'video' },
+  { id: 'bgm', url: './assets/bgm.mp3', type: 'audio' }
+];
+
+const blobStorage = {}; // 存放下载好的本地对象URL
+
+async function preloadAssets() {
+  const total = assets.length;
+  let loaded = 0;
+
+  const promises = assets.map(async (asset) => {
+    try {
+      const response = await fetch(asset.url);
+      const reader = response.body.getReader();
+      const contentLength = +response.headers.get('Content-Length');
+      
+      let receivedLength = 0;
+      let chunks = [];
+      
+      while(true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedLength += value.length;
+        
+        // 更新总体进度（粗略计算）
+        let progress = Math.round(((loaded + (receivedLength / contentLength)) / total) * 100);
+        updateProgressUI(progress);
+      }
+
+      const blob = new Blob(chunks);
+      blobStorage[asset.id] = URL.createObjectURL(blob);
+      loaded++;
+    } catch (e) {
+      console.error("加载失败:", asset.url);
+      // Fallback: 直接使用原地址
+      blobStorage[asset.id] = asset.url;
+    }
+  });
+
+  await Promise.all(promises);
+  onPreloadComplete();
+}
+
+function updateProgressUI(percent) {
+  document.getElementById('load-progress-bar').style.width = `${percent}%`;
+  document.getElementById('load-text').innerText = `正在缝制邀请函... ${percent}%`;
+}
+
+function onPreloadComplete() {
+  gsap.to("#loading-overlay", { opacity: 0, duration: 0.8, onComplete: () => {
+    document.getElementById('loading-overlay').style.display = 'none';
+    gsap.to("#app-wrapper", { autoAlpha: 1, duration: 1 });
+    // 初始化视频
+    const v = document.getElementById('main-video');
+    v.src = blobStorage['video1'];
+  }});
+}
+
+// ══════════════════════════════════
+// 2. 微信自动播放与交互
+// ══════════════════════════════════
+document.addEventListener('WeixinJSBridgeReady', function() {
+  const bgm = document.getElementById('global-bgm');
+  bgm.load(); // 预激活
+}, false);
+
+// 监听视频进度
+const v = document.getElementById('main-video');
+v.ontimeupdate = () => {
+  const progress = (v.currentTime / v.duration) * 100;
+  document.getElementById('video-mini-progress').style.width = `${progress}%`;
+};
+
+// ══════════════════════════════════
+// 3. 一键复制功能
+// ══════════════════════════════════
+document.getElementById('btn-copy-info').addEventListener('click', function() {
+  const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年5月1日 12:00；地点：北京香格里拉饭店；地址：海淀区中关村南大街33号。";
+  
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = this;
+    const originText = btn.innerText;
+    btn.innerText = "✅ 已复制到剪贴板";
+    btn.style.backgroundColor = "#c8b69b"; // 轻微变色反馈
+    
+    setTimeout(() => {
+      btn.innerText = originText;
+      btn.style.backgroundColor = "#f5e6ca";
+    }, 2000);
+  });
+});
+
+// 启动预加载
+preloadAssets();
