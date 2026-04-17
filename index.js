@@ -14,7 +14,7 @@ function initWeddingApp() {
 
     // 1. 初始化所有全局变量（带空检查）
     const mainVideo = document.getElementById('main-video');
-    const bgm = document.getElementById('global-bgm');
+    const bgm = document.getElementById('bgm');
     const copyBtn = document.getElementById('btn-copy-info');
 
     // 2. 绑定视频进度逻辑
@@ -103,16 +103,6 @@ function onPreloadComplete() {
     if (video && blobStorage['video1']) {
         video.src = blobStorage['video1'];
     }
-
-    // 执行进场动画
-    gsap.to("#loading-overlay", { 
-        opacity: 0, 
-        duration: 0.8, 
-        onComplete: () => {
-            document.getElementById('loading-overlay').style.display = 'none';
-            gsap.to("#app-wrapper", { autoAlpha: 1, duration: 1 });
-        }
-    });
 }
 
 function initCopyFunction(btn) {
