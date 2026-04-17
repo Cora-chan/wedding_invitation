@@ -975,6 +975,7 @@ function navigateTo(id) {
   const to   = document.getElementById('page-' + id);
 
   onPageLeave(currentPage);
+  onPagePreEnter(id);  // ← 同步调用，仍在用户手势事件栈内（iOS 自动播放授权窗口）
 
   gsap.timeline({ onComplete: () => { transitioning = false; onPageEnter(id); } })
     .to(from, { opacity: 0, duration: 0.30, ease: 'power2.in' })
@@ -996,6 +997,21 @@ function navigateTo(id) {
 function onPageLeave(id) {
   if (id === 'ending') {
     document.getElementById('ending-video').pause();
+  }
+}
+
+// iOS 微信大招：此函数在 navigateTo() 内同步调用，仍处于用户手势事件栈。
+// iOS WKWebView 只在手势调用栈内允许 play()，GSAP onComplete 回调已脱离该窗口。
+function onPagePreEnter(id) {
+  if (id === 'ending') {
+    const ev = document.getElementById('ending-video');
+    // 若视频尚未加载（readyState 0），先 load 再 play
+    if (ev.readyState === 0) ev.load();
+    ev.play().catch(() => {
+      // 静音后重试（针对部分 WKWebView 版本的策略）
+      ev.muted = true;
+      ev.play().catch(() => {});
+    });
   }
 }
 
@@ -1082,11 +1098,12 @@ function toggleBgm() {
    预热后才允许进度跳至 100%，保证"秒开"体验。
 ══════════════════════════════════════════════════════ */
 
-// 流式下载的大资源（audio / video）
+// 流式下载的大资源（audio / 首屏视频）
+// ending 视频不走 blob：iOS WKWebView（微信）不支持 blob: src 换源，
+// 改为在预加载完成后调用 load() 让浏览器在后台自然缓冲。
 const STREAM_ASSETS = [
   { id: 'bgm',    url: './assets/bgm.wav',                       type: 'audio' },
   { id: 'video1', url: './assets/header_banner_video_ver2.mp4',  type: 'video' },
-  { id: 'video2', url: './assets/ending-video-ver2.mp4',         type: 'video' },
 ];
 // 小资源走普通 onload（gif / jpg 不支持 stream 范围请求）
 const SIMPLE_ASSETS = [
@@ -1172,6 +1189,9 @@ function primeVideo() {
 // 加载完成后注入 BGM blob src，并显示开始界面
 function showStartOverlay() {
   if (blobUrls['bgm']) $bgm.src = blobUrls['bgm'];
+  // iOS WebView 忽略 preload="auto"；在此手动触发 ending 视频的网络加载，
+  // 让用户浏览前几页时 ending 视频在后台静默缓冲，到达时即可秒播。
+  try { document.getElementById('ending-video').load(); } catch(e) {}
   gsap.timeline()
     .to('#loader-gif', { y: -10, duration: 0.18, ease: 'power2.out' })
     .to('#loader-gif', { y: 0,   duration: 0.22, ease: 'bounce.out' })
@@ -1389,13 +1409,13 @@ let loopCount = 0;
 function startEndingVideo() {
   loopCount = 0;
   $loopBadge.textContent = '';
-  // 注入 Blob URL（若已预加载完成）以实现秒开
-  if (blobUrls['video2'] && $endingVideo.src !== blobUrls['video2']) {
-    $endingVideo.src = blobUrls['video2'];
+  // onPagePreEnter 已在手势同步栈内调用了 play()。
+  // 此处（GSAP onComplete 异步回调）只做状态重置：
+  // 若视频已在播放，不干扰；若未播（权限获取失败），再尝试一次。
+  if ($endingVideo.paused) {
+    const p = $endingVideo.play();
+    if (p) p.catch(() => { $endingVideo.muted = true; $endingVideo.play().catch(() => {}); });
   }
-  $endingVideo.currentTime = 0;
-  const p = $endingVideo.play();
-  if (p) p.catch(() => { $endingVideo.muted = true; $endingVideo.play().catch(() => {}); });
   gsap.from('#page-ending .page-nav-btn', { opacity: 0, y: -8, duration: 0.5, ease: 'power2.out', delay: 0.6 });
 }
 
