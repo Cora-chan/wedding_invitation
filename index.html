@@ -1411,9 +1411,17 @@ function initAMap() {
 }
 
 function openAmap() {
-  window.location.href =
-    'https://uri.amap.com/marker?position=' + LNG + ',' + LAT +
-    '&name=' + NAME + '&src=wedding&coordinate=gaode&callnative=1';
+  if (/micromessenger/i.test(navigator.userAgent)) {
+    // 微信内：唤起高德地图小程序导航
+    window.location.href =
+      'https://m.amap.com/navi/?dest=' + LNG + ',' + LAT +
+      '&destName=' + NAME + '&src=wedding';
+  } else {
+    // 非微信：唤起高德 App 或降级网页
+    window.location.href =
+      'https://uri.amap.com/marker?position=' + LNG + ',' + LAT +
+      '&name=' + NAME + '&src=wedding&coordinate=gaode&callnative=1';
+  }
 }
 
 /* ══════════════════════════════════════════════════════
