@@ -1,48 +1,67 @@
 // ══════════════════════════════════
-// 1. 资源配置与权重
+// 0. 全局状态与监控
 // ══════════════════════════════════
-const mandatoryAssets = [
-    { id: 'bgm', url: './assets/bgm.mp3', type: 'audio' },
-    { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' }
-];
+const DEBUG_PREFIX = "[Wedding-H5]";
+console.log(`${DEBUG_PREFIX} 脚本初始化开始...`);
 
-const backgroundAssets = [
+// 资源配置
+const mandatoryAssets = [
+    { id: 'bgm', url: './assets/bgm.wav', type: 'audio' },
+    { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' },
     { id: 'video2', url: './assets/ending-video-ver2.mp4', type: 'video' }
 ];
 
 const blobStorage = {};
 const progressTracking = {};
+mandatoryAssets.forEach(a => progressTracking[a.id] = 0);
 
+document.addEventListener('DOMContentLoaded', () => {
+    console.log(`${DEBUG_PREFIX} DOM 已就绪，启动核心逻辑`);
+    startOptimizedPreload();
+});
+
+// ══════════════════════════════════
+// 1. 深度预加载逻辑 (核心优化)
+// ══════════════════════════════════
 async function startOptimizedPreload() {
-    console.log("📦 启动深度预加载...");
-    
-    // 初始化进度追踪
-    mandatoryAssets.forEach(a => progressTracking[a.id] = 0);
+    console.time(`${DEBUG_PREFIX} 总预加载耗时`);
+    console.log(`${DEBUG_PREFIX} 阶段 1: 开始并行下载必要资源...`, mandatoryAssets.map(a => a.id));
 
-    // 并行下载必要资源
-    const mandatoryPromises = mandatoryAssets.map(asset => fetchWithProgress(asset));
+    try {
+        // 并行下载必要资源
+        const mandatoryPromises = mandatoryAssets.map(asset => fetchWithProgress(asset));
+        await Promise.all(mandatoryPromises);
+        console.log(`${DEBUG_PREFIX} 阶段 1 完成: 所有核心文件已下载至内存 (Blob)`);
 
-    // 等待所有必要文件下载完成
-    await Promise.all(mandatoryPromises);
-    
-    // --- 关键步骤：视频解码预热 ---
-    console.log("🎬 正在同步解码器...");
-    await primeMainVideo();
-    
-    // 全部就绪，进入页面
-    onPreloadComplete();
+        // 阶段 2: 视频解码预热
+        console.log(`${DEBUG_PREFIX} 阶段 2: 启动视频解码预热 (Prime)...`);
+        await primeMainVideo();
 
-    // 后台加载次要资源
-    backgroundAssets.forEach(asset => fetchWithProgress(asset, true));
+        // 阶段 3: 进入应用
+        console.log(`${DEBUG_PREFIX} 阶段 3: 预加载流程全部完成，准备进入开启页`);
+        console.timeEnd(`${DEBUG_PREFIX} 总预加载耗时`);
+        onPreloadComplete();
+
+    } catch (err) {
+        console.error(`${DEBUG_PREFIX} 预加载流程崩溃:`, err);
+        onPreloadComplete(); // 强制进入，防止用户卡死
+    }
 }
 
-// 带有进度反馈的下载函数
+// 带有真实字节监控的下载函数
 async function fetchWithProgress(asset, isBackground = false) {
+    const logTag = isBackground ? "[Background]" : "[Mandatory]";
+    console.log(`${DEBUG_PREFIX}${logTag} 开始请求: ${asset.id}`);
+
     try {
         const response = await fetch(asset.url);
-        const reader = response.body.getReader();
-        const contentLength = +response.headers.get('Content-Length');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
+        const reader = response.body.getReader();
+        const contentLength = +response.headers.get('Content-Length') || 0;
+        
+        if (contentLength === 0) console.warn(`${DEBUG_PREFIX}${logTag} 警告: ${asset.id} 未返回 Content-Length，进度条将失效`);
+
         let receivedLength = 0;
         let chunks = [];
         
@@ -54,67 +73,104 @@ async function fetchWithProgress(asset, isBackground = false) {
             
             if (!isBackground && contentLength > 0) {
                 progressTracking[asset.id] = (receivedLength / contentLength) * 100;
-                updateGlobalProgress();
+                updateGlobalProgressUI();
             }
         }
 
-        const blob = new Blob(chunks);
-        blobStorage[asset.id] = URL.createObjectURL(blob);
+        blobStorage[asset.id] = URL.createObjectURL(new Blob(chunks));
+        console.log(`${DEBUG_PREFIX}${logTag} 下载完成: ${asset.id} (${(receivedLength/1024/1024).toFixed(2)} MB)`);
         
         if (!isBackground) {
             progressTracking[asset.id] = 100;
-            updateGlobalProgress();
+            updateGlobalProgressUI();
         }
     } catch (e) {
-        console.error(`资源加载失败: ${asset.url}`, e);
-        if (!isBackground) progressTracking[asset.id] = 100; 
+        console.error(`${DEBUG_PREFIX}${logTag} 加载失败: ${asset.id}`, e);
+        if (!isBackground) progressTracking[asset.id] = 100; // 即使失败也标记完成以推进进度
     }
 }
 
-// 视频解码预热：确保视频首帧已加载并可播放
+// 视频解码预热函数
 function primeMainVideo() {
     return new Promise((resolve) => {
         const v = document.getElementById('main-video');
-        if (!v || !blobStorage['video1']) return resolve();
+        if (!v || !blobStorage['video1']) {
+            console.warn(`${DEBUG_PREFIX}[Video] 未找到 video 标签或 Blob，跳过预热`);
+            return resolve();
+        }
 
+        console.time(`${DEBUG_PREFIX}[Video] 解码预热耗时`);
+        
         v.oncanplaythrough = () => {
-            console.log("✅ 视频解码就绪，可以秒开");
+            console.log(`${DEBUG_PREFIX}[Video] canplaythrough 触发：解码器已就绪`);
+            console.timeEnd(`${DEBUG_PREFIX}[Video] 解码预热耗时`);
             v.oncanplaythrough = null;
             resolve();
         };
 
-        // 提前赋值 src，让浏览器开始解码
+        v.onerror = (e) => {
+            console.error(`${DEBUG_PREFIX}[Video] 视频预热出错:`, e);
+            resolve();
+        };
+
+        // 关键：在这里将 Blob 注入，并强迫浏览器读取首帧
         v.src = blobStorage['video1'];
-        v.load(); // 强制触发加载
+        v.load(); 
         
-        // 兜底方案：如果 3 秒后还没触发 canplaythrough（某些机型限制），也直接进入
-        setTimeout(resolve, 3000);
+        // 微信兜底：防止某些环境不触发 canplaythrough
+        setTimeout(() => {
+            console.log(`${DEBUG_PREFIX}[Video] 预热超时兜底触发`);
+            resolve();
+        }, 4000);
     });
 }
 
-function updateGlobalProgress() {
+// ══════════════════════════════════
+// 2. UI 状态管理
+// ══════════════════════════════════
+function updateGlobalProgressUI() {
     const values = Object.values(progressTracking);
-    // 进度条只计算必要资源 (BGM + Video1)
-    // 假设下载占 90% 权重，最后 10% 留给解码预热（模拟效果）
-    const downloadProgress = values.reduce((a, b) => a + b, 0) / values.length;
-    const finalProgress = Math.min(downloadProgress * 0.95, 95); 
+    const avgProgress = values.reduce((a, b) => a + b, 0) / values.length;
+    
+    // 进度条只跑到 95%，最后 5% 留给解码完成后的平滑过渡
+    const visualProgress = Math.min(avgProgress * 0.95, 95);
 
     const progressBar = document.getElementById('loading-bar');
     if (progressBar) {
-        gsap.to(progressBar, { width: `${finalProgress}%`, duration: 0.2 });
+        gsap.to(progressBar, { width: `${visualProgress}%`, duration: 0.2, ease: "none" });
+    }
+    
+    const loadText = document.getElementById('load-text');
+    if (loadText) {
+        loadText.innerText = `正在缝制邀请函... ${Math.round(visualProgress)}%`;
     }
 }
 
 function onPreloadComplete() {
-    // 进度条强行补满
-    gsap.to('#loading-bar', { width: '100%', duration: 0.2, onComplete: () => {
-        gsap.to("#loading", { opacity: 0, duration: 0.6, delay: 0.3, onComplete: () => {
-            document.getElementById('loading').style.display = 'none';
-            // 启动后续逻辑
-            initEnvelopeEvents();
-            initPetals();
-        }});
-    }});
+    console.log(`${DEBUG_PREFIX}[UI] 准备移除 Loading 遮罩`);
+    
+    gsap.to('#loading-bar', { width: '100%', duration: 0.3 });
+    gsap.to("#loading", { 
+        opacity: 0, 
+        duration: 0.8, 
+        delay: 0.4, 
+    });
+}
+
+
+function initCopyFunction() {
+    const btn = document.getElementById('btn-copy-info');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        const text = "【黄啸宇 & 康越 婚礼邀请】时间：2026年5月1日 12:00；地点：北京香格里拉饭店";
+        console.log(`${DEBUG_PREFIX}[Event] 触发复制功能`);
+        navigator.clipboard.writeText(text).then(() => {
+            const old = btn.innerText;
+            btn.innerText = "✅ 已复制";
+            setTimeout(() => btn.innerText = old, 2000);
+        });
+    });
 }
 
 function initCopyFunction(btn) {
