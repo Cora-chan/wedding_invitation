@@ -742,7 +742,9 @@
               </div>
             </div></article>
             <article class="swiper-slide"><div class="card">
-             
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="相知" onerror="this.style.display='none'" />
+              </div>
               <div class="card__body">
                 <p class="card__eyebrow">2021 · Summer</p>
                 <h3 class="card__title">慢慢地，我了解了你</h3>
@@ -751,7 +753,9 @@
               </div>
             </div></article>
             <article class="swiper-slide"><div class="card">
-             
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="同行" onerror="this.style.display='none'" />
+              </div>
               <div class="card__body">
                 <p class="card__eyebrow">2022 · Autumn</p>
                 <h3 class="card__title">与你同行，哪里都是远方</h3>
@@ -760,7 +764,9 @@
               </div>
             </div></article>
             <article class="swiper-slide"><div class="card">
-         
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="求婚" onerror="this.style.display='none'" />
+              </div>
               <div class="card__body">
                 <p class="card__eyebrow">2025 · Winter</p>
                 <h3 class="card__title">「你愿意嫁给我吗？」</h3>
@@ -769,6 +775,9 @@
               </div>
             </div></article>
             <article class="swiper-slide"><div class="card">
+              <div class="card__image-wrap">
+                <img src="./assets/headshot3.jpg" alt="婚礼" onerror="this.style.display='none'" />
+              </div>
               <div class="card__body">
                 <p class="card__eyebrow">2026 · 05 · 01</p>
                 <h3 class="card__title">此刻，请见证我们</h3>
@@ -1033,8 +1042,15 @@ const $bgm         = document.getElementById('bgm');
 const $musicToggle = document.getElementById('music-toggle');
 let bgmStarted = false;
 
-// WeChat unlock
-function wxUnlock() { $bgm.load(); }
+// WeChat unlock — 提前激活 audio context，避免 iOS 微信自动播放限制
+function wxUnlock() {
+  $bgm.load();
+  // 激活 AudioContext（若页面使用了 Web Audio API）
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) { const ctx = new AC(); ctx.resume().then(() => ctx.close()); }
+  } catch(e) {}
+}
 if (typeof WeixinJSBridge === 'undefined') {
   document.addEventListener('WeixinJSBridgeReady', wxUnlock, { once: true });
 } else { wxUnlock(); }
@@ -1060,48 +1076,102 @@ function toggleBgm() {
 }
 
 /* ══════════════════════════════════════════════════════
-   PAGE — MAIN  (asset preloader + start button)
+   PAGE — MAIN  (stream preloader + start button)
+   使用 ReadableStream 实现真实字节级进度条。
+   资源全部转为 Blob URL 存入内存，视频经 canplaythrough
+   预热后才允许进度跳至 100%，保证"秒开"体验。
 ══════════════════════════════════════════════════════ */
-const ASSETS = [
-  { type:'image', src:'./assets/placeholder.gif'              },
-  { type:'image', src:'./assets/headshot3.jpg'                },
-  { type:'audio', src:'./assets/bgm.wav'                      },
-  { type:'video', src:'./assets/header_banner_video_ver2.mp4' },
-  { type:'video', src:'./assets/ending-video-ver2.mp4'        },
-  { type:'video', src:'./assets/ending-video-ver2.mp4'             },
+
+// 流式下载的大资源（audio / video）
+const STREAM_ASSETS = [
+  { id: 'bgm',    url: './assets/bgm.wav',                       type: 'audio' },
+  { id: 'video1', url: './assets/header_banner_video_ver2.mp4',  type: 'video' },
+  { id: 'video2', url: './assets/ending-video-ver2.mp4',         type: 'video' },
 ];
+// 小资源走普通 onload（gif / jpg 不支持 stream 范围请求）
+const SIMPLE_ASSETS = [
+  './assets/placeholder.gif',
+  './assets/headshot3.jpg',
+];
+
+const blobUrls   = {};   // id → blob: URL
+const progEach   = {};   // id → 0..100（流式下载进度）
+let   simpleLoaded = 0;
+STREAM_ASSETS.forEach(a => { progEach[a.id] = 0; });
 
 const $loaderFill = document.getElementById('loader-fill');
 const $loaderPct  = document.getElementById('loader-pct');
 const $loader     = document.getElementById('loader');
 const $overlay    = document.getElementById('start-overlay');
 const $btnStart   = document.getElementById('btn-start');
-let loadedCount   = 0;
 
-function onAssetReady() {
-  loadedCount++;
-  const pct = Math.round((loadedCount / ASSETS.length) * 100);
-  $loaderFill.style.width = pct + '%';
-  $loaderPct.textContent  = pct + '%';
-  if (loadedCount >= ASSETS.length) allAssetsReady();
+// 加权平均进度，最高走到 95%（留给 canplaythrough 阶段）
+function refreshProgress() {
+  const streamVals = Object.values(progEach);
+  const streamAvg  = streamVals.reduce((s, v) => s + v, 0) / streamVals.length;
+  const simpleAvg  = SIMPLE_ASSETS.length
+    ? (simpleLoaded / SIMPLE_ASSETS.length) * 100
+    : 100;
+  const total = streamAvg * 0.9 + simpleAvg * 0.1;
+  const vis   = Math.min(total * 0.95, 95);
+  $loaderFill.style.width = vis.toFixed(1) + '%';
+  $loaderPct.textContent  = Math.round(vis) + '%';
 }
 
-function preloadAsset(a) {
-  const timeout = setTimeout(onAssetReady, a.type === 'video' ? 8000 : 5000);
-  const done = () => { clearTimeout(timeout); onAssetReady(); };
-  if (a.type === 'image') {
-    const img = new Image(); img.onload = img.onerror = done; img.src = a.src;
-  } else if (a.type === 'audio') {
-    const aud = new Audio(); aud.preload = 'auto';
-    aud.oncanplaythrough = aud.onerror = done; aud.src = a.src; aud.load();
-  } else {
-    const vid = document.createElement('video'); vid.preload = 'metadata'; vid.muted = true;
-    vid.onloadedmetadata = vid.onerror = done; vid.src = a.src; vid.load();
+// 流式下载：通过 Content-Length + receivedLength 计算真实进度
+async function fetchStream(asset) {
+  try {
+    const resp = await fetch(asset.url, { cache: 'no-store', mode: 'cors' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const total  = +resp.headers.get('Content-Length') || 0;
+    const reader = resp.body.getReader();
+    let received = 0, chunks = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (total > 0) {
+        progEach[asset.id] = (received / total) * 100;
+        refreshProgress();
+      }
+    }
+    blobUrls[asset.id] = URL.createObjectURL(new Blob(chunks));
+    progEach[asset.id] = 100;
+    refreshProgress();
+  } catch (e) {
+    console.warn('[Preload] fallback (原始 src):', asset.id, e.message);
+    blobUrls[asset.id] = asset.url;
+    progEach[asset.id] = 100;
+    refreshProgress();
   }
 }
-ASSETS.forEach(preloadAsset);
 
-function allAssetsReady() {
+// 小资源仍走 onload
+function preloadSimple(url) {
+  const img = new Image();
+  img.onload = img.onerror = () => { simpleLoaded++; refreshProgress(); };
+  img.src = url;
+}
+
+// 视频预热：将 Blob src 赋给 <video>，等 canplaythrough 后才跳 100%
+function primeVideo() {
+  return new Promise(resolve => {
+    $video.src = blobUrls['video1'] || './assets/header_banner_video_ver2.mp4';
+    $video.load();
+    const done = () => {
+      $loaderFill.style.width = '100%';
+      $loaderPct.textContent  = '100%';
+      resolve();
+    };
+    $video.addEventListener('canplaythrough', done, { once: true });
+    setTimeout(done, 4000); // 微信 / 老机型兜底
+  });
+}
+
+// 加载完成后注入 BGM blob src，并显示开始界面
+function showStartOverlay() {
+  if (blobUrls['bgm']) $bgm.src = blobUrls['bgm'];
   gsap.timeline()
     .to('#loader-gif', { y: -10, duration: 0.18, ease: 'power2.out' })
     .to('#loader-gif', { y: 0,   duration: 0.22, ease: 'bounce.out' })
@@ -1114,6 +1184,15 @@ function allAssetsReady() {
       },
     });
 }
+
+// 主预加载流程
+async function runPreload() {
+  SIMPLE_ASSETS.forEach(preloadSimple);
+  await Promise.all(STREAM_ASSETS.map(fetchStream));
+  await primeVideo();
+  showStartOverlay();
+}
+runPreload();
 
 const BTN_LABEL = '开启邀请';
 function startTypewriter() {
@@ -1134,9 +1213,20 @@ $btnStart.addEventListener('touchend', function onT(e) {
 function handleMainStart() {
   if (mainStarted) return;
   mainStarted = true;
+
+  // ★ iOS 微信关键：必须在手势事件的同步调用栈内同时调用 play()，
+  //   否则系统不授予自动播放权限，视频和音频都会静音或卡住。
+  $bgm.play().catch(() => {});
+  $video.play().catch(() => {});
+
+  // BGM 淡入
+  $bgm.volume = 0;
+  gsap.to($bgm, { volume: 0.75, duration: 1.5, ease: 'power2.out' });
+  $musicToggle.classList.add('visible', 'playing');
+  bgmStarted = true;
+
   gsap.to($btnStart, { scale: 0.88, opacity: 0, duration: 0.25, ease: 'power2.in' });
   gsap.to($overlay,  { opacity: 0,  duration: 0.55, delay: 0.15, ease: 'power2.inOut' });
-  startBgm();
   setTimeout(() => navigateTo('video'), 500);
 }
 
@@ -1299,6 +1389,10 @@ let loopCount = 0;
 function startEndingVideo() {
   loopCount = 0;
   $loopBadge.textContent = '';
+  // 注入 Blob URL（若已预加载完成）以实现秒开
+  if (blobUrls['video2'] && $endingVideo.src !== blobUrls['video2']) {
+    $endingVideo.src = blobUrls['video2'];
+  }
   $endingVideo.currentTime = 0;
   const p = $endingVideo.play();
   if (p) p.catch(() => { $endingVideo.muted = true; $endingVideo.play().catch(() => {}); });

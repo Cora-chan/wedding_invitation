@@ -1,0 +1,28 @@
+# Cloudflare Pages / Netlify 通用 _headers 文件
+# 确保媒体资源返回正确的 Content-Type 和 Accept-Ranges，
+# 以支持流式预加载（ReadableStream）和断点续传。
+
+/assets/*.mp4
+  Content-Type: video/mp4
+  Accept-Ranges: bytes
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.wav
+  Content-Type: audio/wav
+  Accept-Ranges: bytes
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.jpg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.gif
+  Content-Type: image/gif
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: no-store
+  X-Frame-Options: DENY
+
+/*
+  X-Content-Type-Options: nosniff
