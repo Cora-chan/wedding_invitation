@@ -54,13 +54,21 @@ async function fetchWithProgress(asset, isBackground = false) {
     console.log(`${DEBUG_PREFIX}${logTag} 开始请求: ${asset.id}`);
 
     try {
-        const response = await fetch(asset.url);
+        // 核心修改：添加 cache: 'no-cache' 或 'no-store' 
+        // 这样可以绕过浏览器的磁盘缓存尝试，直接获取数据流
+        const response = await fetch(asset.url, {
+            cache: 'no-cache', 
+            mode: 'cors'
+        });
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const reader = response.body.getReader();
         const contentLength = +response.headers.get('Content-Length') || 0;
         
-        if (contentLength === 0) console.warn(`${DEBUG_PREFIX}${logTag} 警告: ${asset.id} 未返回 Content-Length，进度条将失效`);
+        if (contentLength === 0) {
+            console.warn(`${DEBUG_PREFIX}${logTag} 警告: ${asset.id} 未返回 Content-Length`);
+        }
 
         let receivedLength = 0;
         let chunks = [];
@@ -77,8 +85,9 @@ async function fetchWithProgress(asset, isBackground = false) {
             }
         }
 
-        blobStorage[asset.id] = URL.createObjectURL(new Blob(chunks));
-        console.log(`${DEBUG_PREFIX}${logTag} 下载完成: ${asset.id} (${(receivedLength/1024/1024).toFixed(2)} MB)`);
+        const blob = new Blob(chunks);
+        blobStorage[asset.id] = URL.createObjectURL(blob);
+        console.log(`${DEBUG_PREFIX}${logTag} 下载并转为 Blob 成功: ${asset.id}`);
         
         if (!isBackground) {
             progressTracking[asset.id] = 100;
@@ -86,7 +95,13 @@ async function fetchWithProgress(asset, isBackground = false) {
         }
     } catch (e) {
         console.error(`${DEBUG_PREFIX}${logTag} 加载失败: ${asset.id}`, e);
-        if (!isBackground) progressTracking[asset.id] = 100; // 即使失败也标记完成以推进进度
+        // 如果 fetch 彻底失败，尝试直接赋值 src 作为 fallback
+        if (!isBackground) {
+            console.log(`${DEBUG_PREFIX}${logTag} 尝试 Fallback 模式`);
+            blobStorage[asset.id] = asset.url; 
+            progressTracking[asset.id] = 100;
+            updateGlobalProgressUI();
+        }
     }
 }
 
