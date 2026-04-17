@@ -1239,6 +1239,17 @@ function handleMainStart() {
   $bgm.play().catch(() => {});
   $video.play().catch(() => {});
 
+  // ★ Ending 视频"寄生"唤醒法：
+  //   微信 WKWebView 的自动播放授权与元素绑定，只有在用户手势栈内 play()
+  //   过的 video 元素，后续才被允许再次 play()。
+  //   此处立即 play → pause → seek(0)，仅为"注册手势授权"，不实际播放。
+  const $ev = document.getElementById('ending-video');
+  $ev.muted = true;
+  $ev.play().then(() => {
+    $ev.pause();
+    $ev.currentTime = 0;
+  }).catch(() => {});
+
   // BGM 淡入
   $bgm.volume = 0;
   gsap.to($bgm, { volume: 0.75, duration: 1.5, ease: 'power2.out' });
