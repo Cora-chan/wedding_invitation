@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initWeddingApp() {
-    gsap.registerPlugin(ScrollToPlugin);
+    //gsap.registerPlugin(ScrollToPlugin);
 
     // 1. 初始化所有全局变量（带空检查）
     const mainVideo = document.getElementById('main-video');
@@ -42,7 +42,7 @@ function initWeddingApp() {
 const assets = [
     { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' },
     { id: 'video2', url: './assets/ending-video-ver2.mp4', type: 'video' },
-    { id: 'bgm', url: './assets/bgm.mp3', type: 'audio' }
+    { id: 'bgm', url: './assets/bgm.wav', type: 'audio' }
 ];
 
 const blobStorage = {};
@@ -72,6 +72,7 @@ async function preloadAssets() {
                 // 为了简单，我们先用已加载文件数来做大进度
                 let fileProgress = (receivedLength / contentLength) / total;
                 let overallProgress = Math.round(((loadedCount / total) + fileProgress) * 100);
+                console.log(`⏳ 加载中: ${asset.id} - ${overallProgress}%`);
                 updateProgressUI(overallProgress);
             }
 
@@ -137,129 +138,6 @@ function initCopyFunction(btn) {
   } catch(e) {}
 })();
 
-// ══════════════════════════════════
-// FLOATING PETALS
-// ══════════════════════════════════
-(function createPetals() {
-  const container = document.getElementById('petals-container');
-  for (let i = 0; i < 12; i++) {
-    const p = document.createElement('div');
-    p.className = 'petal';
-    p.style.left  = Math.random() * 100 + '%';
-    p.style.top   = Math.random() * 100 + '%';
-    container.appendChild(p);
-
-    gsap.set(p, { x: 0, y: 0, rotation: Math.random() * 360, opacity: 0 });
-    gsap.to(p, {
-      x: (Math.random() - 0.5) * 60,
-      y: (Math.random() - 0.5) * 60,
-      rotation: '+=' + (Math.random() * 360),
-      opacity: Math.random() * 0.4 + 0.1,
-      duration: 3 + Math.random() * 4,
-      delay: Math.random() * 3,
-      repeat: -1,
-      yoyo: true,
-      ease: 'sine.inOut'
-    });
-  }
-})();
-
-// ══════════════════════════════════
-// LOADING ANIMATION
-// ══════════════════════════════════
-(function runLoading() {
-  const tl = gsap.timeline({ onComplete: hideLoading });
-
-  tl.to('#logo-mono',  { opacity: 1, duration: 0.8, ease: 'power2.out' }, 0.3)
-    .to('#logo-div',   { width: 80, duration: 0.6, ease: 'power2.out' }, 0.7)
-    .to('#logo-names', { opacity: 1, duration: 0.6, ease: 'power2.out' }, 1.0)
-    .to('#loading-bar',{ width: '100%', duration: 1.2, ease: 'power2.inOut' }, 1.2)
-    .to('#loading',    { opacity: 0, duration: 0.6, ease: 'power2.in' }, 2.8);
-
-  function hideLoading() {
-    document.getElementById('loading').style.display = 'none';
-    initFadeObserver();
-    // Trigger fade-up for envelope section items
-    document.querySelectorAll('#envelope-section .fade-up').forEach(el => {
-      el.classList.add('visible');
-    });
-  }
-})();
-
-// ══════════════════════════════════
-// ENVELOPE OPEN ANIMATION
-// ══════════════════════════════════
-let envelopeOpened = false;
-
-function openEnvelope() {
-  if (envelopeOpened) return;
-  envelopeOpened = true;
-
-  const flap    = document.getElementById('env-flap');
-  const wrapper = document.getElementById('envelope-wrapper');
-  const content = document.getElementById('content');
-  const hint    = document.querySelector('.env-hint');
-
-  const tl = gsap.timeline();
-
-  // 1. Slight envelope lift
-  tl.to('#envelope', {
-    y: -12, scale: 1.03,
-    duration: 0.3, ease: 'power2.out'
-  })
-  // 2. Flap opens (rotateX 0 → -180 — flip up)
-  .to(flap, {
-    rotationX: -180,
-    duration: 0.7, ease: 'power2.inOut',
-    transformOrigin: 'top center'
-  })
-  // 3. Shake the envelope
-  .to('#envelope', {
-    x: 8, duration: 0.06, ease: 'power2.inOut', yoyo: true, repeat: 5
-  })
-  // 4. Envelope scale out and fade
-  .to(wrapper, {
-    scale: 0.85, opacity: 0,
-    duration: 0.4, ease: 'power2.in'
-  }, '+=0.2')
-  .to(hint, {
-    opacity: 0, duration: 0.3
-  }, '<')
-  // 5. Show content
-  .call(function() {
-    content.style.display = 'block';
-    gsap.set(content, { opacity: 0, y: 40 });
-  })
-  .to(content, {
-    opacity: 1, y: 0,
-    duration: 0.5, ease: 'power2.out'
-  })
-  // 6. Smooth scroll down to #cover
-  .call(function() {
-    gsap.to(window, {
-      scrollTo: { y: '#cover', offsetY: 0 },
-      duration: 1.2, ease: 'power2.inOut'
-    });
-    document.getElementById('scroll-hint').style.display = 'none';
-  });
-}
-
-// Touch event (no 300ms delay on mobile)
-const envWrapper = document.getElementById('envelope-wrapper');
-let touchMoved = false;
-envWrapper.addEventListener('touchstart', function(e) {
-  touchMoved = false;
-}, { passive: true });
-envWrapper.addEventListener('touchmove', function() {
-  touchMoved = true;
-}, { passive: true });
-envWrapper.addEventListener('touchend', function(e) {
-  if (!touchMoved) {
-    e.preventDefault();
-    openEnvelope();
-  }
-}, { passive: false });
-envWrapper.addEventListener('click', openEnvelope);
 
 // ══════════════════════════════════
 // FADE-UP OBSERVER
