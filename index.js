@@ -1,108 +1,120 @@
-
 // ══════════════════════════════════
-// 0. 启动与安全检查
+// 1. 资源配置与权重
 // ══════════════════════════════════
-console.log("🚀 index.js 已连接，准备启动预加载...");
+const mandatoryAssets = [
+    { id: 'bgm', url: './assets/bgm.mp3', type: 'audio' },
+    { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' }
+];
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 将所有依赖 DOM 的逻辑包裹在这里
-    initWeddingApp();
-});
-
-function initWeddingApp() {
-    //gsap.registerPlugin(ScrollToPlugin);
-
-    // 1. 初始化所有全局变量（带空检查）
-    const mainVideo = document.getElementById('main-video');
-    const bgm = document.getElementById('bgm');
-    const copyBtn = document.getElementById('btn-copy-info');
-
-    // 2. 绑定视频进度逻辑
-    if (mainVideo) {
-        mainVideo.ontimeupdate = () => {
-            const progress = (mainVideo.currentTime / mainVideo.duration) * 100;
-            const progressBar = document.getElementById('video-mini-progress');
-            if (progressBar) progressBar.style.width = `${progress}%`;
-        };
-    }
-
-    // 3. 启动预加载
-    console.log("📦 开始预加载资源...");
-    preloadAssets();
-
-    // 4. 绑定复制功能
-    if (copyBtn) {
-        initCopyFunction(copyBtn);
-    }
-}
-
-// ══════════════════════════════════
-// 3. 核心预加载逻辑 (Blob 模式)
-// ══════════════════════════════════
-const assets = [
-    { id: 'video1', url: './assets/header_banner_video_ver2.mp4', type: 'video' },
-    { id: 'video2', url: './assets/ending-video-ver2.mp4', type: 'video' },
-    { id: 'bgm', url: './assets/bgm.wav', type: 'audio' }
+const backgroundAssets = [
+    { id: 'video2', url: './assets/ending-video-ver2.mp4', type: 'video' }
 ];
 
 const blobStorage = {};
+const progressTracking = {};
 
-async function preloadAssets() {
-    const total = assets.length;
-    let loadedCount = 0;
+async function startOptimizedPreload() {
+    console.log("📦 启动深度预加载...");
+    
+    // 初始化进度追踪
+    mandatoryAssets.forEach(a => progressTracking[a.id] = 0);
 
+    // 并行下载必要资源
+    const mandatoryPromises = mandatoryAssets.map(asset => fetchWithProgress(asset));
+
+    // 等待所有必要文件下载完成
+    await Promise.all(mandatoryPromises);
+    
+    // --- 关键步骤：视频解码预热 ---
+    console.log("🎬 正在同步解码器...");
+    await primeMainVideo();
+    
+    // 全部就绪，进入页面
+    onPreloadComplete();
+
+    // 后台加载次要资源
+    backgroundAssets.forEach(asset => fetchWithProgress(asset, true));
+}
+
+// 带有进度反馈的下载函数
+async function fetchWithProgress(asset, isBackground = false) {
     try {
-        const promises = assets.map(async (asset) => {
-            const response = await fetch(asset.url);
-            if (!response.ok) throw new Error(`Network response was not ok: ${asset.url}`);
+        const response = await fetch(asset.url);
+        const reader = response.body.getReader();
+        const contentLength = +response.headers.get('Content-Length');
+        
+        let receivedLength = 0;
+        let chunks = [];
+        
+        while(true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            receivedLength += value.length;
             
-            // 使用更高级的读取器来追踪真实百分比
-            const reader = response.body.getReader();
-            const contentLength = +response.headers.get('Content-Length');
-            let receivedLength = 0;
-            let chunks = [];
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                receivedLength += value.length;
-                
-                // 这里计算的是单文件的进度，我们可以累加到全局
-                // 为了简单，我们先用已加载文件数来做大进度
-                let fileProgress = (receivedLength / contentLength) / total;
-                let overallProgress = Math.round(((loadedCount / total) + fileProgress) * 100);
-                console.log(`⏳ 加载中: ${asset.id} - ${overallProgress}%`);
-                updateProgressUI(overallProgress);
+            if (!isBackground && contentLength > 0) {
+                progressTracking[asset.id] = (receivedLength / contentLength) * 100;
+                updateGlobalProgress();
             }
+        }
 
-            const blob = new Blob(chunks);
-            blobStorage[asset.id] = URL.createObjectURL(blob);
-            loadedCount++;
-        });
-
-        await Promise.all(promises);
-        console.log("✅ 所有资源加载完毕");
-        onPreloadComplete();
+        const blob = new Blob(chunks);
+        blobStorage[asset.id] = URL.createObjectURL(blob);
+        
+        if (!isBackground) {
+            progressTracking[asset.id] = 100;
+            updateGlobalProgress();
+        }
     } catch (e) {
-        console.error("❌ 预加载过程中出错:", e);
-        // 出错也要进页面，不然就卡死了
-        onPreloadComplete();
+        console.error(`资源加载失败: ${asset.url}`, e);
+        if (!isBackground) progressTracking[asset.id] = 100; 
     }
 }
 
-function updateProgressUI(percent) {
-    const bar = document.getElementById('load-progress-bar');
-    const text = document.getElementById('load-text');
-    if (bar) bar.style.width = `${percent}%`;
-    if (text) text.innerText = `正在缝制邀请函... ${percent}%`;
+// 视频解码预热：确保视频首帧已加载并可播放
+function primeMainVideo() {
+    return new Promise((resolve) => {
+        const v = document.getElementById('main-video');
+        if (!v || !blobStorage['video1']) return resolve();
+
+        v.oncanplaythrough = () => {
+            console.log("✅ 视频解码就绪，可以秒开");
+            v.oncanplaythrough = null;
+            resolve();
+        };
+
+        // 提前赋值 src，让浏览器开始解码
+        v.src = blobStorage['video1'];
+        v.load(); // 强制触发加载
+        
+        // 兜底方案：如果 3 秒后还没触发 canplaythrough（某些机型限制），也直接进入
+        setTimeout(resolve, 3000);
+    });
+}
+
+function updateGlobalProgress() {
+    const values = Object.values(progressTracking);
+    // 进度条只计算必要资源 (BGM + Video1)
+    // 假设下载占 90% 权重，最后 10% 留给解码预热（模拟效果）
+    const downloadProgress = values.reduce((a, b) => a + b, 0) / values.length;
+    const finalProgress = Math.min(downloadProgress * 0.95, 95); 
+
+    const progressBar = document.getElementById('loading-bar');
+    if (progressBar) {
+        gsap.to(progressBar, { width: `${finalProgress}%`, duration: 0.2 });
+    }
 }
 
 function onPreloadComplete() {
-    const video = document.getElementById('main-video');
-    if (video && blobStorage['video1']) {
-        video.src = blobStorage['video1'];
-    }
+    // 进度条强行补满
+    gsap.to('#loading-bar', { width: '100%', duration: 0.2, onComplete: () => {
+        gsap.to("#loading", { opacity: 0, duration: 0.6, delay: 0.3, onComplete: () => {
+            document.getElementById('loading').style.display = 'none';
+            // 启动后续逻辑
+            initEnvelopeEvents();
+            initPetals();
+        }});
+    }});
 }
 
 function initCopyFunction(btn) {
