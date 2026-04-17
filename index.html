@@ -665,10 +665,10 @@
     <div id="start-overlay" style="display:none;">
       <div aria-hidden="true" style="height:0;position:relative;z-index:1;"></div>
       <div class="overlay-center">
-        <p class="start-subtitle">诚邀您出席</p>
+        <p class="start-subtitle">诚邀 <span id="guest-name"></span> 出席</p>
         <h3 class="start-main-title">黄啸宇 &amp; 康越</h3>
-        <div class="start-heart" aria-hidden="true">♥</div>
-        <p class="start-date">2026.09.05</p>
+        <h3 class="start-main-title">上海婚礼</h3>
+        <p class="start-date" style="margin-top: 15px;">2026.09.05</p>
       </div>
       <div class="overlay-bottom">
         <button id="btn-start" aria-label="开启邀请"><span id="btn-text"></span></button>
@@ -1499,6 +1499,12 @@ function copyEmail() {
     try { document.execCommand('copy'); onOK(); } catch(e) {} ta.remove();
   }
 }
+
+// URL 参数 ?to= 宾客姓名注入
+(function() {
+  const name = new URLSearchParams(window.location.search).get('to');
+  if (name) document.getElementById('guest-name').textContent = name;
+})();
 </script>
 </body>
 </html>
