@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 8 \"https://fonts.loli.net/css2?family=Ma+Shan+Zheng\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 8 \"https://fonts.font.im/css2?family=Ma+Shan+Zheng\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 8 \"https://fonts.geekzu.org/css2?family=Ma+Shan+Zheng\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 8 \"https://www.baidu.com\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout 8 \"https://cdn.jsdelivr.net\")",
+      "Bash(curl -s -A 'Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36' 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;600;700&display=swap' -o /tmp/gfonts.css)",
+      "Read(//tmp/**)",
+      "Bash(pip show *)",
+      "Bash(npm --version)",
+      "Bash(curl -L --progress-bar https://github.com/google/fonts/raw/main/ofl/mashanzheng/MaShanZheng-Regular.ttf -o c:/Users/Xiaoyu/invitation/wechat_invitation/fonts/ma-shan-zheng/MaShanZheng-Regular.ttf)",
+      "Bash(curl -L --progress-bar https://github.com/google/fonts/raw/main/ofl/dancingscript/static/DancingScript-Bold.ttf -o c:/Users/Xiaoyu/invitation/wechat_invitation/fonts/dancing-script/DancingScript-Bold.ttf)"
+    ]
+  }
+}
